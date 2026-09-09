@@ -1,0 +1,31 @@
+# ---- Java / Maven ----
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+
+# ---- Node / Vue ----
+node_modules/
+dist/
+*.local
+
+# ---- Python / matcher ----
+__pycache__/
+*.pyc
+.venv/
+venv/
+models/          # 模型权重不进仓库，各自本地下载
+
+# ---- 数据集照片不进 git（太大），用网盘同步，仓库只留 xlsx ----
+dataset/photos/
+
+# ---- 系统/编辑器 ----
+.DS_Store
+Thumbs.db
+.vscode/
+*.log
