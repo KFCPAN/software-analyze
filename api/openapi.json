@@ -1,0 +1,421 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "校园失物招领智能匹配平台 API",
+    "description": "《软件系统分析与设计综合实践》课程项目接口契约。统一响应结构：{ code: 0成功/非0失败, message: 提示信息, data: 业务数据 }。除注册登录外，所有接口需在 Header 携带 Authorization: Bearer {token}。",
+    "version": "v1.0 (第3周契约初稿)"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "后端本地开发" }
+  ],
+  "tags": [
+    { "name": "认证", "description": "注册/登录" },
+    { "name": "用户", "description": "个人资料与信用" },
+    { "name": "基础数据", "description": "分类与地点词表" },
+    { "name": "信息", "description": "失物/招领发布与检索" },
+    { "name": "匹配", "description": "智能匹配结果与反馈" },
+    { "name": "认领", "description": "认领申请、核验、核销" },
+    { "name": "消息", "description": "站内信" },
+    { "name": "后台", "description": "管理员审核与看板" }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "注册（校园邮箱）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "注册成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "注册成功，请查收验证邮件", "data": null } } }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "登录",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功，返回 JWT",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "token": "eyJhbGciOiJIUzI1NiJ9.xxx.yyy", "user": { "id": 10001, "username": "zhangsan", "nickname": "张三", "role": "USER", "creditScore": 100 } } } } }
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": ["用户"],
+        "summary": "获取当前登录用户信息",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "id": 10001, "username": "zhangsan", "nickname": "张三", "email": "zs@muc.edu.cn", "phone": "138****1234", "role": "USER", "creditScore": 100 } } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["用户"],
+        "summary": "修改个人资料（昵称/手机号）",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nickname": { "type": "string", "example": "张三" },
+                  "phone": { "type": "string", "example": "13812341234" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": ["基础数据"],
+        "summary": "物品分类列表",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": [ { "id": 1, "name": "手机" }, { "id": 2, "name": "钱包" }, { "id": 3, "name": "卡类" } ] } } }
+          }
+        }
+      }
+    },
+    "/api/locations": {
+      "get": {
+        "tags": ["基础数据"],
+        "summary": "地点词表（支持按校区过滤）",
+        "parameters": [
+          { "name": "campus", "in": "query", "schema": { "type": "string", "enum": ["海淀", "丰台", "跨校区"] }, "description": "不传则返回全部" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": [ { "id": 1, "name": "海淀校区", "campus": "海淀", "level": 1, "children": [ { "id": 11, "name": "文华楼", "campus": "海淀", "level": 2 } ] } ] } } }
+          }
+        }
+      }
+    },
+    "/api/items": {
+      "post": {
+        "tags": ["信息"],
+        "summary": "发布失物/招领信息（招领需带隐藏特征）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ItemCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "发布成功；系统异步触发智能匹配，命中后通过站内信推送",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "发布成功，匹配进行中，命中后将通知您", "data": { "id": 20001 } } } }
+          }
+        }
+      },
+      "get": {
+        "tags": ["信息"],
+        "summary": "信息流检索（多条件 + 分页）",
+        "parameters": [
+          { "name": "type", "in": "query", "required": true, "schema": { "type": "string", "enum": ["LOST", "FOUND"] } },
+          { "name": "categoryId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "locationId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "keyword", "in": "query", "schema": { "type": "string" }, "description": "按标题/描述模糊搜索" },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "total": 57, "page": 1, "size": 10, "list": [ { "id": 20001, "type": "FOUND", "title": "黑色皮质卡包", "categoryId": 2, "categoryName": "钱包", "locationName": "清真食堂门口", "eventTime": "2026-09-10 12:30:00", "coverImage": "/files/img/f001.jpg", "status": "OPEN", "createdAt": "2026-09-10 13:02:11" } ] } } } }
+          }
+        }
+      }
+    },
+    "/api/items/{id}": {
+      "get": {
+        "tags": ["信息"],
+        "summary": "信息详情（联系方式仅匹配确认后可见）",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "responses": {
+          "200": {
+            "description": "成功；hiddenFeatures 不返回，contactVisible 标识联系方式是否可见",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "id": 20001, "type": "FOUND", "title": "黑色皮质卡包", "categoryName": "钱包", "locationName": "清真食堂门口", "eventTime": "2026-09-10 12:30:00", "description": "在清真食堂门口捡到一个黑色皮质卡包，已交到荟贤一楼失物招领处", "images": ["/files/img/f001a.jpg", "/files/img/f001b.jpg"], "status": "OPEN", "publisher": { "id": 10002, "nickname": "热心同学", "creditScore": 105 }, "contactVisible": false } } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["信息"],
+        "summary": "编辑自己发布的信息",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ItemCreateRequest" } } } },
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/items/{id}/close": {
+      "post": {
+        "tags": ["信息"],
+        "summary": "关闭信息（已找回/已归还/放弃）",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/items/mine": {
+      "get": {
+        "tags": ["信息"],
+        "summary": "我发布的信息列表",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["OPEN", "MATCHED", "CLAIMING", "CLOSED", "ARCHIVED"] } }
+        ],
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/files": {
+      "post": {
+        "tags": ["信息"],
+        "summary": "上传图片（返回路径，供发布时引用）",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" } }, "required": ["file"] }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "成功；证件/人脸图片将由系统自动打码后存储", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "path": "/files/img/2026/09/abc123.jpg" } } } } }
+        }
+      }
+    },
+    "/api/matches": {
+      "get": {
+        "tags": ["匹配"],
+        "summary": "某条信息的智能匹配候选列表（按综合分降序）",
+        "parameters": [ { "name": "itemId", "in": "query", "required": true, "schema": { "type": "integer" } } ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": [ { "matchId": 30001, "item": { "id": 20002, "title": "黑色卡包", "coverImage": "/files/img/l001.jpg", "locationName": "清真食堂门口", "eventTime": "2026-09-09 18:00:00" }, "textScore": 0.87, "imageScore": 0.79, "timeScore": 0.95, "locationScore": 1.0, "totalScore": 0.88, "status": "PENDING" } ] } } }
+          }
+        }
+      }
+    },
+    "/api/matches/{id}/feedback": {
+      "post": {
+        "tags": ["匹配"],
+        "summary": "对匹配结果反馈（是它/不是它，回流调权）",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "confirm": { "type": "boolean" } }, "required": ["confirm"] }, "example": { "confirm": true } } }
+        },
+        "responses": { "200": { "description": "confirm=true 时前端应跳转认领申请页", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/claims": {
+      "post": {
+        "tags": ["认领"],
+        "summary": "提交认领申请（需回答隐藏特征）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["foundItemId", "answers"],
+                "properties": {
+                  "foundItemId": { "type": "integer", "example": 20001 },
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "featureKey": { "type": "string", "example": "卡内姓名" },
+                        "answer": { "type": "string", "example": "张三" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "提交成功，进入待核验", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "申请已提交，等待拾获者核验", "data": { "claimId": 40001 } } } } } }
+      }
+    },
+    "/api/claims/mine": {
+      "get": {
+        "tags": ["认领"],
+        "summary": "我的认领申请列表（含状态）",
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/claims/todo": {
+      "get": {
+        "tags": ["认领"],
+        "summary": "待我核验的认领申请（拾获者视角）",
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/claims/{id}/review": {
+      "post": {
+        "tags": ["认领"],
+        "summary": "核验认领申请（通过/驳回/升级仲裁）",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["APPROVE", "REJECT", "DISPUTE"] },
+                  "reason": { "type": "string", "description": "驳回或升级仲裁时必填" }
+                },
+                "example": { "action": "APPROVE" }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "通过后系统生成一次性核销码并通知认领人", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/claims/{id}/code": {
+      "get": {
+        "tags": ["认领"],
+        "summary": "认领人获取交接核销码（前端渲染为二维码）",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "verifyCode": "LNF-9F3K2D8Q", "expiresAt": "2026-09-20 23:59:59" } } } } } }
+      }
+    },
+    "/api/claims/verify": {
+      "post": {
+        "tags": ["认领"],
+        "summary": "拾获者扫码核销（交接完成）",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "required": ["verifyCode"], "properties": { "verifyCode": { "type": "string" } }, "example": { "verifyCode": "LNF-9F3K2D8Q" } } } }
+        },
+        "responses": { "200": { "description": "核销成功：认领单完成、信息关闭、双方信用分更新、互评开启", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "交接完成", "data": { "claimId": 40001 } } } } } }
+      }
+    },
+    "/api/messages": {
+      "get": {
+        "tags": ["消息"],
+        "summary": "站内消息列表",
+        "parameters": [ { "name": "unreadOnly", "in": "query", "schema": { "type": "boolean", "default": false } } ],
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/messages/{id}/read": {
+      "post": {
+        "tags": ["消息"],
+        "summary": "标记已读",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/admin/items": {
+      "get": {
+        "tags": ["后台"],
+        "summary": "待审核信息列表（管理员/审核员）",
+        "parameters": [ { "name": "status", "in": "query", "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/admin/users/{id}/ban": {
+      "post": {
+        "tags": ["后台"],
+        "summary": "封禁/解封用户",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "ban": { "type": "boolean" }, "reason": { "type": "string" } }, "required": ["ban"] } } } },
+        "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
+    "/api/admin/stats/overview": {
+      "get": {
+        "tags": ["后台"],
+        "summary": "运营数据看板总览",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "totalItems": 230, "totalLost": 145, "totalFound": 85, "matchHitRate": 0.42, "avgRecoverHours": 36.5, "completedClaims": 38, "hotLocations": [ { "locationName": "图书馆", "count": 21 }, { "locationName": "清真食堂", "count": 15 } ] } } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "description": "0=成功，非0=业务错误码" },
+          "message": { "type": "string" },
+          "data": { "type": "object", "nullable": true }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["username", "password", "email"],
+        "properties": {
+          "username": { "type": "string", "minLength": 3, "maxLength": 20, "example": "zhangsan" },
+          "password": { "type": "string", "minLength": 6, "example": "abc123456" },
+          "email": { "type": "string", "format": "email", "example": "zs@muc.edu.cn" },
+          "nickname": { "type": "string", "example": "张三" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string", "example": "zhangsan" },
+          "password": { "type": "string", "example": "abc123456" }
+        }
+      },
+      "ItemCreateRequest": {
+        "type": "object",
+        "required": ["type", "title", "categoryId", "eventTime", "description"],
+        "properties": {
+          "type": { "type": "string", "enum": ["LOST", "FOUND"] },
+          "title": { "type": "string", "maxLength": 100, "example": "黑色皮质卡包" },
+          "categoryId": { "type": "integer", "example": 2 },
+          "locationId": { "type": "integer", "nullable": true, "description": "记不清可不传", "example": 14 },
+          "eventTime": { "type": "string", "format": "date-time", "example": "2026-09-10 12:30:00" },
+          "description": { "type": "string", "example": "在清真食堂门口捡到一个黑色皮质卡包" },
+          "images": { "type": "array", "items": { "type": "string" }, "description": "先调 /api/files 上传得到的路径", "example": ["/files/img/abc.jpg"] },
+          "hiddenFeatures": {
+            "type": "array",
+            "description": "仅 FOUND 类型必填：防冒领的隐藏特征，不公开展示",
+            "items": {
+              "type": "object",
+              "properties": {
+                "featureKey": { "type": "string", "example": "卡内姓名" },
+                "answer": { "type": "string", "example": "张三" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
