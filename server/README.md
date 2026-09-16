@@ -1,0 +1,198 @@
+# lnf-server · 校园失物招领智能匹配平台（后端）
+
+《软件系统分析与设计综合实践》课程项目后端工程。当前进度：**M1 工程骨架 + 用户认证**、**M2 信息发布模块**（基础数据 / 文件上传 / 失物招领发布与检索），智能匹配、认领流程后续迭代。
+
+## 技术栈
+
+- Java 17 + Spring Boot 3.3 + Maven
+- MyBatis-Plus 3.5 + PostgreSQL 16（pgvector）
+- Spring Security + JWT（jjwt 0.12.x）
+- Lombok + spring-boot-starter-validation
+
+## 目录结构
+
+```
+server/
+├── pom.xml
+└── src/main/
+    ├── java/com/lnf/server/
+    │   ├── ServerApplication.java        # 启动类
+    │   ├── common/                       # Result / BizException / 全局异常处理 / AesUtil
+    │   ├── config/                       # SecurityConfig（含 CORS）/ WebMvcConfig（/files 静态映射）/ MybatisPlusConfig（分页）
+    │   ├── security/                     # JwtUtil / JwtAuthFilter / LoginUser
+    │   ├── entity/  mapper/  service/    # User / Item / ItemFeature / Category / Location / Claim
+    │   ├── dto/                          # 请求/响应对象
+    │   └── controller/                   # Auth / User / Item / Category / Location / File
+    └── resources/application.yml         # 数据源 / MyBatis-Plus / JWT 配置
+```
+
+## 前置条件
+
+1. JDK 17 与 Maven 3.6+（`java -version`、`mvn -v` 自检）
+2. 数据库就绪：Docker 容器 `lnf-postgres`（PostgreSQL 16 + pgvector），
+   连接 `jdbc:postgresql://localhost:5432/lost_and_found`，用户 `lnf` / 密码 `lnf2026`，
+   建表脚本见 `../db/init.sql`（已执行则无需重复）。
+
+## 启动
+
+```bash
+cd server
+mvn spring-boot:run
+# 或先打包再运行
+mvn package -DskipTests
+java -jar target/lnf-server-0.0.1-SNAPSHOT.jar
+```
+
+服务监听 `http://localhost:8080`。前端 Vite 开发服务器（`http://localhost:5173`）已在 CORS 白名单中。
+
+## 接口自测（curl）
+
+### 1. 注册 `POST /api/auth/register`
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"zhangsan","password":"abc123456","email":"zs@muc.edu.cn","nickname":"张三"}'
+```
+
+成功响应：
+
+```json
+{"code":0,"message":"注册成功","data":null}
+```
+
+参数校验失败示例（用户名过短 / 邮箱非法）会返回 `{"code":400,"message":"用户名长度须为 3-20 位; ...","data":null}`；
+用户名或邮箱重复返回 `code=1001 / 1002`。
+
+### 2. 登录 `POST /api/auth/login`
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"zhangsan","password":"abc123456"}'
+```
+
+成功响应：
+
+```json
+{"code":0,"message":"success","data":{"token":"eyJhbGciOi...","user":{"id":2,"username":"zhangsan","nickname":"张三","role":"USER","creditScore":100}}}
+```
+
+### 3. 当前用户信息 `GET /api/users/me`（需 JWT）
+
+```bash
+TOKEN=上一步返回的token
+curl http://localhost:8080/api/users/me -H "Authorization: Bearer $TOKEN"
+```
+
+成功响应（手机号脱敏为 `138****1234` 形式）：
+
+```json
+{"code":0,"message":"success","data":{"id":2,"username":"zhangsan","nickname":"张三","email":"zs@muc.edu.cn","phone":null,"role":"USER","creditScore":100}}
+```
+
+未携带或携带非法 Token 时返回 HTTP 401 + `{"code":401,"message":"未登录或登录已过期","data":null}`。
+
+## M2 信息发布模块接口
+
+### 4. 分类列表 `GET /api/categories`（无需登录）
+
+```bash
+curl http://localhost:8080/api/categories
+# {"code":0,"message":"success","data":[{"id":1,"name":"手机"},{"id":2,"name":"钱包"},...]}
+```
+
+### 5. 地点词表 `GET /api/locations?campus=`（无需登录，campus 可选：海淀/丰台/跨校区）
+
+```bash
+curl "http://localhost:8080/api/locations?campus=海淀"
+# data 为两级树：level1 校区 → children level2 楼栋/区域
+```
+
+### 6. 上传图片 `POST /api/files`（需 JWT，multipart，字段名 file）
+
+限制：单张 ≤10MB，仅 jpg/jpeg/png/webp。文件存到 `server/uploads/yyyyMM/`（UUID 文件名），
+`/files/**` 由 ResourceHandler 映射到该目录，可直接访问。
+
+```bash
+curl -X POST http://localhost:8080/api/files -H "Authorization: Bearer $TOKEN" -F "file=@photo.jpg"
+# {"code":0,"message":"success","data":{"path":"/files/202609/uuid.jpg"}}
+```
+
+### 7. 发布信息 `POST /api/items`（需 JWT）
+
+```bash
+curl -X POST http://localhost:8080/api/items \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"type":"FOUND","title":"捡到黑色卡包","categoryId":2,"locationId":4,
+       "eventTime":"2026-09-10 13:00:00","description":"在清真食堂门口捡到",
+       "images":["/files/202609/uuid.jpg"],
+       "hiddenFeatures":[{"featureKey":"卡内姓名","answer":"张三"}]}'
+# {"code":0,"message":"发布成功，匹配进行中，命中后将通知您","data":{"id":2}}
+```
+
+规则：`type=FOUND` 时 `hiddenFeatures` 至少 1 条（答案 AES 加密入 `item_features` 表，不公开展示）；
+`type=LOST` 不需要；`locationId` 可空但传了必须存在；`eventTime` 支持 `yyyy-MM-dd HH:mm:ss` 或 ISO 偏移格式。
+
+### 8. 信息流检索 `GET /api/items`（需 JWT）
+
+```bash
+curl "http://localhost:8080/api/items?type=FOUND&keyword=卡包&page=1&size=10" -H "Authorization: Bearer $TOKEN"
+# data: {total, page, size, list:[{id,type,title,categoryId,categoryName,locationName,eventTime,coverImage,status,createdAt}]}
+```
+
+仅返回 `OPEN` 状态，按创建时间倒序；`keyword` 对标题+描述模糊匹配。
+
+### 9. 信息详情 `GET /api/items/{id}`（需 JWT）
+
+返回全部字段 + `publisher{id,nickname,creditScore}` + `contactVisible`。
+`contactVisible=true`（发布者本人，或认领单已 APPROVED/COMPLETED 的认领人）时 publisher 附带 `phone/email`；
+为 false 时不带联系方式。`hiddenFeatures` 任何情况都不返回。
+
+### 10. 编辑 `PUT /api/items/{id}` / 关闭 `POST /api/items/{id}/close`（需 JWT）
+
+仅发布者本人，且仅 `OPEN` 状态可操作；编辑请求体同发布。
+
+### 11. 我发布的 `GET /api/items/mine?status=`（需 JWT，status 可选）
+
+```bash
+curl "http://localhost:8080/api/items/mine?status=OPEN" -H "Authorization: Bearer $TOKEN"
+```
+
+## 统一返回体与错误码约定
+
+所有接口返回 `{code, message, data}`：`0` = 成功，非 0 = 失败。
+
+| code | 含义 |
+|------|------|
+| 0    | 成功 |
+| 400  | 参数校验失败 |
+| 401  | 未登录 / Token 无效或过期 |
+| 403  | 无访问权限 |
+| 1001 | 用户名已被注册 |
+| 1002 | 邮箱已被注册 |
+| 1003 | 用户名或密码错误 |
+| 1004 | 账号已被封禁 |
+| 2001 | 分类不存在或已停用 |
+| 2002 | 地点不存在或已停用 |
+| 2003 | 招领信息必须填写至少 1 条隐藏特征 |
+| 2004 | 信息不存在或已删除 |
+| 2005 | 无权操作他人发布的信息 |
+| 2006 | 当前状态不允许该操作（仅 OPEN 可编辑/关闭） |
+| 2007 | 仅支持 jpg/jpeg/png/webp 格式图片 |
+| 2008 | 文件大小超过 10MB 限制 |
+| 2009 | 上传文件不能为空 |
+| 2010 | 文件保存失败 |
+| 500  | 系统异常 |
+
+## 配置说明（application.yml）
+
+- `spring.datasource`：PostgreSQL 连接信息（URL 含 `stringtype=unspecified`，兼容 jsonb 列写入）
+- `spring.servlet.multipart`：上传限制 10MB
+- `mybatis-plus.configuration.map-underscore-to-camel-case: true`：下划线转驼峰
+- `jwt.secret`：Base64 编码的 HS256 密钥（≥256bit），**生产环境务必用环境变量覆盖**
+- `jwt.expire`：Token 有效期，默认 86400000ms（24h）
+- `app.upload-dir`：图片上传目录（默认 `uploads`，已加入 .gitignore）
+- `app.aes-key`：隐藏特征答案 AES 密钥（16/24/32 字节），**生产环境务必用环境变量覆盖**
+
+> 注意：数据库中预置的 admin 账号 `password_hash` 为占位符（非 BCrypt 哈希），无法直接登录，需后续通过重置密码流程处理。
