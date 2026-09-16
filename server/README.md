@@ -1,6 +1,6 @@
 # lnf-server · 校园失物招领智能匹配平台（后端）
 
-《软件系统分析与设计综合实践》课程项目后端工程。当前进度：**M1 工程骨架 + 用户认证**、**M2 信息发布模块**（基础数据 / 文件上传 / 失物招领发布与检索），智能匹配、认领流程后续迭代。
+《软件系统分析与设计综合实践》课程项目后端工程。当前进度：**M1 工程骨架 + 用户认证**、**M2 信息发布模块**（基础数据 / 文件上传 / 失物招领发布与检索）、**M3 认领流程模块**（claims 状态机 + 核销码 + 信用分联动）、**M4 站内消息**（列表 / 未读数 / 标记已读），智能匹配、后台仲裁后续迭代。
 
 ## 技术栈
 
@@ -159,6 +159,84 @@ curl "http://localhost:8080/api/items?type=FOUND&keyword=卡包&page=1&size=10" 
 curl "http://localhost:8080/api/items/mine?status=OPEN" -H "Authorization: Bearer $TOKEN"
 ```
 
+## M3 认领流程模块接口
+
+状态机：`PENDING(待核验) → APPROVED(核验通过,生成核销码) → COMPLETED(扫码核销完成)`；
+旁路 `REJECTED(驳回) / DISPUTED(争议仲裁) / EXPIRED(超时关闭)`。
+items 联动：存在进行中的认领单（PENDING/APPROVED/DISPUTED）→ `CLAIMING`；核销完成 → `CLOSED`；
+驳回/过期且无其他进行中认领单 → 回到 `OPEN`。
+
+### 12. 提交认领申请 `POST /api/claims`（需 JWT）
+
+```bash
+curl -X POST http://localhost:8080/api/claims \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"foundItemId":2,"answers":[{"featureKey":"卡内姓名","answer":"张三"}]}'
+# {"code":0,"message":"申请已提交，等待拾获者核验","data":{"claimId":1}}
+```
+
+规则：仅能对 FOUND 且 OPEN/MATCHED 的信息申请；不能认领自己的；同一用户同一信息仅一条进行中认领单。
+服务端解密登记特征逐条比对，作答连同 `matched` 标记存入 `claims.feature_answers`（仅供拾获者参考，不自动通过）。
+创建后 items → CLAIMING，并写站内信通知拾获者。
+
+### 13. 我的认领申请 `GET /api/claims/mine`（需 JWT）
+
+返回 `[{id, foundItemId, itemTitle, status, rejectReason, createdAt}]`。
+
+### 14. 待我核验 `GET /api/claims/todo`（需 JWT，拾获者视角）
+
+返回 PENDING 认领单：`[{id, foundItemId, itemTitle, status, claimant{id,nickname,creditScore}, featureAnswers[{featureKey,answer,matched}], createdAt}]`。
+
+### 15. 核验 `POST /api/claims/{id}/review`（需 JWT，仅拾获者，仅 PENDING）
+
+```bash
+curl -X POST http://localhost:8080/api/claims/1/review \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"action":"APPROVE"}'                       # 或 {"action":"REJECT","reason":"特征不符"} / {"action":"DISPUTE","reason":"..."}
+```
+
+- `APPROVE`：生成核销码 `LNF-XXXXXXXX`（8 位大写字母数字，唯一），7 天有效；通知认领人
+- `REJECT`：`reason` 必填；无其他进行中认领单则 items → OPEN；通知认领人
+- `DISPUTE`：`reason` 必填；→ DISPUTED（仲裁逻辑第 9 周实现）
+
+### 16. 获取核销码 `GET /api/claims/{id}/code`（需 JWT，仅认领人本人，仅 APPROVED）
+
+```json
+{"code":0,"message":"success","data":{"verifyCode":"LNF-OFI9YALL","expiresAt":"2026-09-23 18:00:00"}}
+```
+
+### 17. 扫码核销 `POST /api/claims/verify`（需 JWT，仅拾获者）
+
+```bash
+curl -X POST http://localhost:8080/api/claims/verify \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"verifyCode":"LNF-OFI9YALL"}'
+```
+
+事务内完成：claims → COMPLETED（写 completed_at）、items → CLOSED、
+拾获者信用分 +5 / 认领人 +2（各写一条 credit_logs 并更新 users.credit_score）、站内信通知双方。
+核销码错误/过期返回 3009（过期时认领单自动 → EXPIRED，items 视情况回 OPEN）。
+
+## M4 站内消息接口
+
+### 18. 消息列表 `GET /api/messages?unreadOnly=&page=&size=`（需 JWT）
+
+```bash
+curl "http://localhost:8080/api/messages?unreadOnly=true&page=1&size=10" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{"code":0,"message":"success","data":{"total":2,"page":1,"size":10,"unreadCount":2,
+  "list":[{"id":3,"type":"CLAIM_PROGRESS","title":"认领申请已通过","content":"...","relatedId":5,"isRead":false,"createdAt":"2026-09-16 18:00:00"}]}}
+```
+
+当前用户消息按 created_at 倒序分页；`unreadOnly=true` 只返回未读；
+`unreadCount` 为未读总数（不受 unreadOnly/分页影响，供前端小红点使用）。
+
+### 19. 标记已读 `POST /api/messages/{id}/read`（需 JWT）
+
+仅消息归属人本人可操作（他人返回 4002）；幂等——已是已读也返回成功。
+
 ## 统一返回体与错误码约定
 
 所有接口返回 `{code, message, data}`：`0` = 成功，非 0 = 失败。
@@ -183,6 +261,19 @@ curl "http://localhost:8080/api/items/mine?status=OPEN" -H "Authorization: Beare
 | 2008 | 文件大小超过 10MB 限制 |
 | 2009 | 上传文件不能为空 |
 | 2010 | 文件保存失败 |
+| 3001 | 认领单不存在 |
+| 3002 | 只能认领招领（FOUND）信息 |
+| 3003 | 该信息当前状态不可认领 |
+| 3004 | 不能认领自己发布的信息 |
+| 3005 | 已有一条进行中的认领单 |
+| 3006 | 无权核验该认领单（仅拾获者） |
+| 3007 | 认领单当前状态不允许该操作 |
+| 3008 | 驳回/升级仲裁必须填写原因 |
+| 3009 | 核销码无效或已过期 |
+| 3010 | 无权查看核销码（仅认领人本人） |
+| 3011 | 无权核销（仅拾获者） |
+| 4001 | 消息不存在 |
+| 4002 | 无权操作他人的消息 |
 | 500  | 系统异常 |
 
 ## 配置说明（application.yml）
