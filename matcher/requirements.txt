@@ -1,0 +1,7 @@
+# matcher 匹配引擎微服务依赖
+# 安装：pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Windows 下 PyPI 的 torch 即 CPU 版，无需额外 index
+fastapi>=0.115
+uvicorn[standard]>=0.30
+sentence-transformers>=3.0
+torch>=2.2

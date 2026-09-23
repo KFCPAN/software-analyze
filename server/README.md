@@ -1,6 +1,17 @@
 # lnf-server · 校园失物招领智能匹配平台（后端）
 
-《软件系统分析与设计综合实践》课程项目后端工程。当前进度：**M1 工程骨架 + 用户认证**、**M2 信息发布模块**（基础数据 / 文件上传 / 失物招领发布与检索）、**M3 认领流程模块**（claims 状态机 + 核销码 + 信用分联动）、**M4 站内消息**（列表 / 未读数 / 标记已读），智能匹配、后台仲裁后续迭代。
+《软件系统分析与设计综合实践》课程项目后端工程。当前进度：**M1 工程骨架 + 用户认证**、**M2 信息发布模块**（基础数据 / 文件上传 / 失物招领发布与检索）、**M3 认领流程模块**（claims 状态机 + 核销码 + 信用分联动）、**M4 站内消息**（列表 / 未读数 / 标记已读）、**M5 智能匹配接入**（发布即匹配：文本向量化 → pgvector 粗筛 → 多因子打分 → 命中通知），CLIP 图像向量与后台仲裁后续迭代。
+
+## 匹配引擎对接（M5）
+
+依赖 matcher 微服务（`../matcher/`，FastAPI，端口 9000，见该目录 README）。
+
+- 发布/编辑（标题或描述变更）后，事务提交后异步（`@Async` 线程池）调 matcher `POST /embed/text`，512 维向量写回 `items.text_vector`
+- matcher 不可用时仅记 WARN 日志降级，**不阻塞发布**（待补算队列留 TODO）
+- 匹配计算：pgvector 余弦距离粗筛 Top20（反向类型 + OPEN + 先丢后捡时间约束）→
+  多因子打分 → `totalScore = 0.6*text + 0.2*time + 0.2*location`（权重/阈值见 yml `match.*`），
+  ≥ 0.55 写入 matches（唯一约束冲突忽略），命中后双方各收到一条 `MATCH_HIT` 站内信
+- 因子规则：timeScore = max(0.3, 1.0 - 0.1×天数)；locationScore = 同地点 1.0 / 同校区 0.6 / 跨校区 0.2 / 任一方为空 0.4
 
 ## 技术栈
 
@@ -237,6 +248,27 @@ curl "http://localhost:8080/api/messages?unreadOnly=true&page=1&size=10" -H "Aut
 
 仅消息归属人本人可操作（他人返回 4002）；幂等——已是已读也返回成功。
 
+## M5 智能匹配接口
+
+### 20. 匹配候选列表 `GET /api/matches?itemId=`（需 JWT，仅该 item 发布者本人）
+
+```bash
+curl "http://localhost:8080/api/matches?itemId=1" -H "Authorization: Bearer $TOKEN"
+# [{"matchId":1,"item":{"id":2,"title":"雨伞","coverImage":null,"locationName":"清真食堂","eventTime":"2026-09-15 18:00:00"},
+#   "textScore":0.6418,"imageScore":null,"timeScore":0.9792,"locationScore":1.0,"totalScore":0.7809,"status":"PENDING"}]
+```
+
+按 totalScore 降序；REJECTED 不返回；`item` 为**对方**信息的摘要。
+
+### 21. 匹配反馈 `POST /api/matches/{id}/feedback`（需 JWT，仅相关 item 发布者）
+
+```bash
+curl -X POST http://localhost:8080/api/matches/1/feedback \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"confirm":true}'
+```
+
+`confirm=true` → CONFIRMED（前端应跳转认领申请页）；`false` → REJECTED（负反馈，后续不再推荐该对）。仅 PENDING 可反馈。
+
 ## 统一返回体与错误码约定
 
 所有接口返回 `{code, message, data}`：`0` = 成功，非 0 = 失败。
@@ -274,6 +306,9 @@ curl "http://localhost:8080/api/messages?unreadOnly=true&page=1&size=10" -H "Aut
 | 3011 | 无权核销（仅拾获者） |
 | 4001 | 消息不存在 |
 | 4002 | 无权操作他人的消息 |
+| 5001 | 匹配记录不存在 |
+| 5002 | 无权查看/操作他人的匹配记录 |
+| 5003 | 该匹配记录已反馈过 |
 | 500  | 系统异常 |
 
 ## 配置说明（application.yml）

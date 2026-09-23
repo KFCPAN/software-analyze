@@ -24,6 +24,8 @@ import com.lnf.server.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -56,6 +58,7 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
     private final CategoryService categoryService;
     private final LocationService locationService;
     private final AesUtil aesUtil;
+    private final MatchService matchService;
 
     /**
      * 发布失物/招领信息
@@ -74,7 +77,9 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
 
         saveFeatures(item.getId(), request);
 
-        // TODO(第6周匹配引擎)：发布后异步计算 text_vector/image_vector 并触发智能匹配，命中后站内信推送
+        // 事务提交后异步：文本向量化写回 + 触发智能匹配（matcher 不可用不阻塞发布）
+        triggerVectorizeAfterCommit(item.getId());
+        // TODO(CLIP 图像向量)：首图 image_vector 下周接入后在此一并触发
         return item.getId();
     }
 
@@ -159,6 +164,10 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
         Item item = checkOwnerAndEditable(itemId, userId);
         validateRequest(request);
 
+        // 标题/描述变化会影响文本向量，需异步重算并重新匹配
+        boolean textChanged = !item.getTitle().equals(request.getTitle())
+                || !item.getDescription().equals(request.getDescription());
+
         applyRequest(item, request);
         item.setUpdatedAt(OffsetDateTime.now());
         updateById(item);
@@ -167,6 +176,10 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
         itemFeatureMapper.delete(new LambdaQueryWrapper<ItemFeature>()
                 .eq(ItemFeature::getItemId, itemId));
         saveFeatures(itemId, request);
+
+        if (textChanged) {
+            triggerVectorizeAfterCommit(itemId);
+        }
     }
 
     /**
@@ -198,6 +211,22 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
     // ------------------------------------------------------------------
     // 私有方法
     // ------------------------------------------------------------------
+
+    /**
+     * 事务提交后异步触发文本向量化 + 匹配（避免异步线程在事务提交前读不到数据）
+     */
+    private void triggerVectorizeAfterCommit(Long itemId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    matchService.vectorizeAndMatch(itemId);
+                }
+            });
+        } else {
+            matchService.vectorizeAndMatch(itemId);
+        }
+    }
 
     private void validateRequest(ItemCreateRequest request) {
         if (!categoryService.existsEnabled(request.getCategoryId())) {

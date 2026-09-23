@@ -36,6 +36,18 @@ app:
   # AES 密钥（16/24/32 字节），用于隐藏特征答案加密。生产环境请通过环境变量覆盖。
   aes-key: LnfAesKey2026!!!
 
+# 匹配引擎微服务（matcher/，FastAPI）
+matcher:
+  base-url: http://localhost:9000
+
+# 智能匹配：综合分 = 0.6*文本 + 0.2*时间 + 0.2*地点，≥ 阈值才写入 matches
+match:
+  threshold: 0.55
+  weights:
+    text: 0.6
+    time: 0.2
+    location: 0.2
+
 logging:
   level:
     com.lnf.server: debug
