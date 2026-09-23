@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>校园失物招领平台 - 页面层级树图（报告2.5节素材）</title>
+<script src="./echarts.min.js"></script>
+<style>
+  body { margin: 0; font-family: "Microsoft YaHei", sans-serif; background: #f5f7fa; }
+  #header { text-align: center; padding: 18px; background: #fff; border-bottom: 1px solid #e4e7ed; }
+  #header h1 { font-size: 20px; margin: 0 0 6px; color: #303133; }
+  #header p { margin: 0; font-size: 13px; color: #909399; }
+  #tree { width: 100%; height: calc(100vh - 90px); }
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>校园失物招领智能匹配平台 · 页面层级树图</h1>
+  <p>首页 → 各子页 → 主要操作（报告 2.5 节素材，可交互展开/收起）</p>
+</div>
+<div id="tree"></div>
+<script>
+const data = {
+  name: '首页\n（信息流：招领/遗失 双Tab）',
+  children: [
+    {
+      name: '搜索与筛选',
+      children: [
+        { name: '关键词搜索\n分类/地点筛选' },
+        { name: '物品卡片\n点击进入详情页' }
+      ]
+    },
+    {
+      name: '认证模块',
+      children: [
+        { name: '登录页\n邮箱/学号+密码', children: [{ name: '登录成功 → 首页' }] },
+        { name: '注册页\n校园邮箱验证码', children: [{ name: '注册成功 → 登录页' }] }
+      ]
+    },
+    {
+      name: '发布模块',
+      children: [
+        { name: '发布失物\n分类/时间/地点/描述/照片', children: [{ name: '提交 → 我的发布\n触发智能匹配' }] },
+        { name: '发布招领\n同上+隐藏特征（防冒领）', children: [{ name: '提交 → 我的发布\n反向匹配失主' }] },
+        { name: '我的发布\n编辑/下架/标记已找回' }
+      ]
+    },
+    {
+      name: '物品详情页',
+      children: [
+        { name: '图片展示 / 描述 / 发布者卡片\n（联系方式脱敏容错）' },
+        { name: '智能匹配候选\n匹配度+是它/不是它', children: [{ name: '是它 → 认领申请\n不是 → 记录负反馈' }] },
+        { name: '我要认领按钮', children: [{ name: '→ 认领申请页' }] }
+      ]
+    },
+    {
+      name: '认领流程',
+      children: [
+        { name: '认领申请\n动态隐藏特征问答+佐证照片', children: [{ name: '提交 → 我的认领列表' }] },
+        { name: '我的认领列表\n状态标签（待核验/通过/已交接/拒绝）', children: [{ name: '通过后 → 查看核销码' }] },
+        { name: '待我核验\n（拾获者/审核员）', children: [{ name: '通过 → 生成核销码\n拒绝 → 记录疑似冒领' }] },
+        { name: '线下交接\n核销码扫码核销 → 互评' }
+      ]
+    },
+    {
+      name: '消息中心',
+      children: [
+        { name: '消息列表\n匹配/认领/系统分类' },
+        { name: '未读小红点\n（接口 unreadCount）', children: [{ name: '点击消息 → 标记已读\n跳转详情/认领' }] }
+      ]
+    },
+    {
+      name: '个人中心',
+      children: [
+        { name: '个人资料\n联系方式管理' },
+        { name: '信用记录\n信用分明细' },
+        { name: '账号设置\n通知开关/改密/退出' }
+      ]
+    },
+    {
+      name: '管理后台',
+      children: [
+        { name: '数据看板\n发布量/命中率/热力图' },
+        { name: '内容审核\n通过/驳回' },
+        { name: '用户管理\n封禁/解封' },
+        { name: '系统设置\n匹配权重/阈值/词表' }
+      ]
+    }
+  ]
+};
+
+const chart = echarts.init(document.getElementById('tree'));
+chart.setOption({
+  tooltip: { trigger: 'item', triggerOn: 'mousemove' },
+  series: [{
+    type: 'tree',
+    data: [data],
+    top: '6%', left: '3%', bottom: '6%', right: '14%',
+    symbol: 'circle',
+    symbolSize: 8,
+    orient: 'LR',
+    initialTreeDepth: 2,
+    label: {
+      position: 'left',
+      verticalAlign: 'middle',
+      align: 'right',
+      fontSize: 13,
+      color: '#303133',
+      formatter: function (p) { return p.name.replace(/\n/g, ' '); }
+    },
+    leaves: { label: { position: 'right', verticalAlign: 'middle', align: 'left' } },
+    expandAndCollapse: true,
+    animationDuration: 550,
+    lineStyle: { color: '#a8c6e8', width: 1.5, curveness: 0.5 },
+    itemStyle: { color: '#409eff', borderWidth: 1, borderColor: '#2f5597' },
+    emphasis: { itemStyle: { color: '#e6a23c' } }
+  }]
+});
+window.addEventListener('resize', () => chart.resize());
+</script>
+</body>
+</html>

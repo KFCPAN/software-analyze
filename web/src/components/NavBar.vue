@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getUnreadCount } from '@/api/message'
@@ -54,7 +54,8 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const unreadCount = ref(0)
+// 未读数读全局 store（消息页操作后同步刷新）
+const unreadCount = computed(() => userStore.unreadCount)
 
 const activeMenu = computed(() => route.path)
 
@@ -64,10 +65,17 @@ onMounted(() => {
   }
 })
 
+// 路由切换时刷新未读数
+watch(() => route.path, () => {
+  if (userStore.token) {
+    fetchUnreadCount()
+  }
+})
+
 async function fetchUnreadCount() {
   try {
     const res = await getUnreadCount()
-    unreadCount.value = res.data?.count || 0
+    userStore.setUnreadCount(res.data?.count || 0)
   } catch (e) {
     // 静默失败
   }

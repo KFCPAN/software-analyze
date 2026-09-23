@@ -36,9 +36,33 @@
               <el-alert title="关键特征已隐藏，认领时需回答验证问题" type="warning" :closable="false" show-icon />
             </div>
 
-            <div class="contact-section" v-if="detail.contactVisible">
+            <div class="contact-section" v-if="contactVisible">
               <h3>联系方式</h3>
-              <p>{{ detail.contact }}</p>
+              <p>{{ contactText }}</p>
+            </div>
+
+            <!-- 发布者信息卡片 -->
+            <div class="publisher-card">
+              <el-avatar :size="44">{{ publisherName.charAt(0) }}</el-avatar>
+              <div class="publisher-info">
+                <div class="publisher-name">{{ publisherName }}</div>
+                <div class="publisher-meta">
+                  <el-tag v-if="publisherCredit !== null" size="small" type="warning" effect="plain">
+                    信用分 {{ publisherCredit }}
+                  </el-tag>
+                  <span v-if="publisherVerified" class="verified-tag">
+                    <el-icon><CircleCheck /></el-icon> 已认证
+                  </span>
+                </div>
+              </div>
+              <div class="publisher-contact">
+                <template v-if="contactVisible">
+                  <el-icon><Phone /></el-icon> {{ contactText || '未填写' }}
+                </template>
+                <template v-else>
+                  <el-tag type="info" effect="plain" size="small">联系方式已隐藏，匹配/认领成功后展示</el-tag>
+                </template>
+              </div>
             </div>
 
             <div class="action-buttons">
@@ -82,7 +106,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import { getPostDetail } from '@/api/post'
@@ -93,6 +117,36 @@ const router = useRouter()
 const loading = ref(false)
 const detail = ref({})
 const matches = ref([])
+
+// 发布者信息（容错：publisher 可能是字符串或对象）
+const publisherName = computed(() => {
+  const p = detail.value.publisher
+  if (!p) return '匿名用户'
+  if (typeof p === 'string') return p
+  return p.username || p.nickname || '匿名用户'
+})
+const publisherCredit = computed(() => {
+  const p = detail.value.publisher
+  if (!p || typeof p === 'string') return null
+  return p.credit ?? null
+})
+const publisherVerified = computed(() => {
+  const p = detail.value.publisher
+  return !!(p && typeof p === 'object' && p.verified)
+})
+// contactVisible 容错：字段缺失/为 false 时都不展示联系方式
+const contactVisible = computed(() => {
+  const p = detail.value.publisher
+  if (p && typeof p === 'object' && typeof p.contactVisible === 'boolean') {
+    return p.contactVisible
+  }
+  return !!detail.value.contactVisible
+})
+const contactText = computed(() => {
+  const p = detail.value.publisher
+  if (p && typeof p === 'object' && p.contact) return p.contact
+  return detail.value.contact || ''
+})
 
 onMounted(() => {
   loadDetail()
@@ -113,10 +167,10 @@ async function loadDetail() {
       category: '证件卡片',
       location: '图书馆三楼',
       time: new Date().toISOString(),
-      publisher: '张三',
+      publisher: { username: '张三', credit: 96, verified: true, contactVisible: false },
       description: '在图书馆三楼自习室丢失，黑色皮质钱包，内有身份证、校园卡和少量现金。校园卡上有姓名，有看到的同学请联系我，必有重谢！',
       images: [],
-      contactVisible: false
+      contact: '138****1234'
     }
     matches.value = [
       { id: 101, title: '捡到黑色钱包', score: 0.92, images: [] },
@@ -227,6 +281,50 @@ function formatTime(time) {
   padding: 16px;
   background: #f0f9eb;
   border-radius: 6px;
+}
+
+.publisher-card {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fafafa;
+}
+
+.publisher-info {
+  flex: 1;
+}
+
+.publisher-name {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.publisher-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.verified-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #67c23a;
+}
+
+.publisher-contact {
+  font-size: 13px;
+  color: #606266;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .action-buttons {

@@ -4,6 +4,7 @@ import { ref } from 'vue'
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
   const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
+  const unreadCount = ref(0)
 
   function setToken(newToken) {
     token.value = newToken
@@ -22,9 +23,13 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('userInfo')
   }
 
+  function setUnreadCount(n) {
+    unreadCount.value = n
+  }
+
   function isAdmin() {
     return userInfo.value?.role === 'admin'
   }
 
-  return { token, userInfo, setToken, setUserInfo, logout, isAdmin }
+  return { token, userInfo, unreadCount, setToken, setUserInfo, setUnreadCount, logout, isAdmin }
 })

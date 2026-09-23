@@ -4,7 +4,12 @@
     <div class="message-container">
       <div class="message-header">
         <h2 class="page-title">消息中心</h2>
-        <el-button @click="markAllRead">全部已读</el-button>
+        <div class="header-right">
+          <el-badge :value="userStore.unreadCount" :hidden="userStore.unreadCount === 0" class="unread-badge">
+            <span class="unread-text">未读</span>
+          </el-badge>
+          <el-button size="small" @click="markAllRead">全部已读</el-button>
+        </div>
       </div>
       <el-tabs v-model="activeTab" @tab-change="loadList">
         <el-tab-pane label="全部" name="all" />
@@ -35,20 +40,35 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
-import { getMessages, markRead, markAllRead as apiMarkAllRead } from '@/api/message'
+import { useUserStore } from '@/stores/user'
+import { getMessages, getUnreadCount, markRead, markAllRead as apiMarkAllRead } from '@/api/message'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const userStore = useUserStore()
 const activeTab = ref('all')
 const list = ref([])
 const loading = ref(false)
 
+const unreadTotal = computed(() => userStore.unreadCount)
+
 onMounted(() => {
   loadList()
+  refreshUnread()
 })
+
+async function refreshUnread() {
+  try {
+    const res = await getUnreadCount()
+    userStore.setUnreadCount(res.data?.count || 0)
+  } catch (e) {
+    // 演示数据：模拟未读数
+    userStore.setUnreadCount(list.value.filter(m => !m.read).length)
+  }
+}
 
 async function loadList() {
   loading.value = true
@@ -72,6 +92,7 @@ async function handleRead(msg) {
       await markRead(msg.id)
     } catch (e) {}
     msg.read = true
+    userStore.setUnreadCount(Math.max(0, userStore.unreadCount - 1))
   }
   if (msg.type === 'match') {
     router.push('/home')
@@ -85,6 +106,7 @@ async function markAllRead() {
     await apiMarkAllRead()
   } catch (e) {}
   list.value.forEach(m => m.read = true)
+  userStore.setUnreadCount(0)
   ElMessage.success('已全部标记为已读')
 }
 
@@ -110,6 +132,22 @@ function formatTime(time) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.unread-badge :deep(.el-badge__content) {
+  position: static;
+  transform: none;
+}
+
+.unread-text {
+  font-size: 14px;
+  color: #909399;
 }
 
 .page-title {

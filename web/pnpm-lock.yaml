@@ -124,6 +124,9 @@ importers:
       pinia:
         specifier: ^2.1.7
         version: 2.3.1(vue@3.5.42)
+      qrcode.vue:
+        specifier: ^3.11.0
+        version: 3.11.0(vue@3.5.42)
       vue:
         specifier: ^3.4.0
         version: 3.5.42
@@ -717,6 +720,11 @@ packages:
     resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
     engines: {node: '>=10'}
 
+  qrcode.vue@3.11.0:
+    resolution: {integrity: sha512-PnaO9yqcEVsH9euUmo4Nn0JZMkNwk4u6fDUosKjDTXv2Cgv7rHZhr2D8Iq54clBvSycOESwgUE/rw/tBRBjIVg==}
+    peerDependencies:
+      vue: ^3.0.0
+
   rollup@4.63.3:
     resolution: {integrity: sha512-1i2XreiAoMMXuPGD6Msj2xWrMMkHojNRKivInxGQcg7/1KuPuYlfUutLyh4drnOxUTHX9cHI4wFoat8D/NKaBw==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
@@ -1272,6 +1280,10 @@ snapshots:
       source-map-js: 1.2.1
 
   proxy-from-env@2.1.0: {}
+
+  qrcode.vue@3.11.0(vue@3.5.42):
+    dependencies:
+      vue: 3.5.42
 
   rollup@4.63.3:
     dependencies:

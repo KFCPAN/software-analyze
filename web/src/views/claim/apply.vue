@@ -8,12 +8,26 @@
         <el-form-item label="物品名称">
           <el-input :value="postTitle" disabled />
         </el-form-item>
-        <el-form-item label="验证问题" prop="answer">
+
+        <!-- 动态渲染隐藏特征问答 -->
+        <el-form-item
+          v-for="(q, idx) in questions"
+          :key="idx"
+          :label="`验证问题 ${idx + 1}`"
+          :prop="`answers.${idx}`"
+          :rules="[{ required: true, message: '请回答验证问题', trigger: 'blur' }]"
+        >
           <div class="question-box">
-            <p>请描述该物品的隐藏特征（如内部标记、特殊挂饰、卡面信息等）：</p>
+            <p>{{ q.question || q }}</p>
           </div>
-          <el-input v-model="form.answer" type="textarea" :rows="3" placeholder="请详细描述，只有真正的失主才知道" />
+          <el-input
+            v-model="form.answers[idx]"
+            type="textarea"
+            :rows="2"
+            :placeholder="q.hint || '请详细描述，只有真正的失主才知道'"
+          />
         </el-form-item>
+
         <el-form-item label="佐证照片">
           <el-upload v-model:file-list="form.evidence" list-type="picture-card" :auto-upload="false" :limit="3" accept="image/*">
             <el-icon><Plus /></el-icon>
@@ -45,16 +59,15 @@ const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
 const postTitle = ref('')
+const questions = ref([])
 
 const form = reactive({
-  answer: '',
+  answers: [],
   evidence: [],
   remark: ''
 })
 
-const rules = {
-  answer: [{ required: true, message: '请回答验证问题', trigger: 'blur' }]
-}
+const rules = {}
 
 onMounted(() => {
   loadPostInfo()
@@ -64,9 +77,18 @@ async function loadPostInfo() {
   try {
     const res = await getPostDetail(route.params.id)
     postTitle.value = res.data.title
+    // 动态隐藏特征问答：优先取 detail.questions，否则给默认问题兜底
+    questions.value = res.data.questions?.length
+      ? res.data.questions
+      : [{ question: '请描述该物品的隐藏特征（如内部标记、特殊挂饰、卡面信息等）', hint: '请详细描述，只有真正的失主才知道' }]
   } catch (e) {
     postTitle.value = '黑色钱包'
+    questions.value = [
+      { question: '请描述该物品的隐藏特征（如内部标记、特殊挂饰、卡面信息等）', hint: '请详细描述，只有真正的失主才知道' },
+      { question: '钱包内有几张卡片？分别是什么类型？', hint: '例如：校园卡 + 身份证' }
+    ]
   }
+  form.answers = questions.value.map(() => '')
 }
 
 async function handleSubmit() {
@@ -117,6 +139,7 @@ async function handleSubmit() {
   border-radius: 4px;
   margin-bottom: 12px;
   color: #e6a23c;
+  width: 100%;
 }
 
 .tip {
