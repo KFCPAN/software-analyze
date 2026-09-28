@@ -6,6 +6,7 @@ import com.lnf.server.common.BizException;
 import com.lnf.server.dto.LoginRequest;
 import com.lnf.server.dto.LoginResponse;
 import com.lnf.server.dto.RegisterRequest;
+import com.lnf.server.dto.UpdateProfileRequest;
 import com.lnf.server.dto.UserVO;
 import com.lnf.server.entity.User;
 import com.lnf.server.mapper.UserMapper;
@@ -89,6 +90,25 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         vo.setRole(user.getRole());
         vo.setCreditScore(user.getCreditScore());
         return vo;
+    }
+
+    /**
+     * 修改个人资料（昵称/手机号，null 字段不动）
+     */
+    public UserVO updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new BizException(401, "用户不存在或已被删除");
+        }
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        user.setUpdatedAt(java.time.OffsetDateTime.now());
+        updateById(user);
+        return getCurrentUser(userId);
     }
 
     /**

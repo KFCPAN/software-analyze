@@ -19,11 +19,12 @@ public interface MatchMapper extends BaseMapper<Match> {
      */
     @Insert("INSERT INTO matches (lost_item_id, found_item_id, text_score, image_score, "
             + "time_score, location_score, total_score, status, created_at) "
-            + "VALUES (#{lostItemId}, #{foundItemId}, #{textScore}, NULL, "
+            + "VALUES (#{lostItemId}, #{foundItemId}, #{textScore}, #{imageScore,jdbcType=NUMERIC}, "
             + "#{timeScore}, #{locationScore}, #{totalScore}, 'PENDING', now()) "
             + "ON CONFLICT (lost_item_id, found_item_id) DO NOTHING")
     int insertIgnore(@Param("lostItemId") Long lostItemId, @Param("foundItemId") Long foundItemId,
-                     @Param("textScore") BigDecimal textScore, @Param("timeScore") BigDecimal timeScore,
+                     @Param("textScore") BigDecimal textScore, @Param("imageScore") BigDecimal imageScore,
+                     @Param("timeScore") BigDecimal timeScore,
                      @Param("locationScore") BigDecimal locationScore, @Param("totalScore") BigDecimal totalScore);
 
     /**

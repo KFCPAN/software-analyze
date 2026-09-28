@@ -2,8 +2,14 @@ package com.lnf.server.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -43,6 +49,36 @@ public class MatcherClient {
             return (List<Double>) vector;
         } catch (Exception e) {
             log.warn("matcher 服务不可用（{}）：{}", baseUrl, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 图像向量化：POST /embed/image（multipart 表单，字段名 file）。matcher 不可用或非图片返回 null。
+     */
+    @SuppressWarnings("unchecked")
+    public List<Double> embedImage(byte[] data, String filename) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            // RestTemplate 的 multipart 需要资源提供文件名，否则服务端按空文件名处理
+            ByteArrayResource resource = new ByteArrayResource(data) {
+                @Override
+                public String getFilename() {
+                    return filename;
+                }
+            };
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", resource);
+            Map<String, Object> response = restTemplate.postForObject(
+                    baseUrl + "/embed/image", new HttpEntity<>(body, headers), Map.class);
+            if (response == null || !(response.get("vector") instanceof List<?> vector)) {
+                log.warn("matcher /embed/image 返回异常: {}", response);
+                return null;
+            }
+            return (List<Double>) vector;
+        } catch (Exception e) {
+            log.warn("matcher /embed/image 调用失败（{}）：{}", baseUrl, e.getMessage());
             return null;
         }
     }

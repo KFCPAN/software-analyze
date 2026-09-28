@@ -54,6 +54,7 @@ public class ClaimService extends ServiceImpl<ClaimMapper, Claim> {
     private final CreditLogMapper creditLogMapper;
     private final MessageService messageService;
     private final AesUtil aesUtil;
+    private final AuditLogService auditLogService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     /**
@@ -300,6 +301,58 @@ public class ClaimService extends ServiceImpl<ClaimMapper, Claim> {
                 "您发布的「" + item.getTitle() + "」已完成交接，信用分 +5。",
                 claim.getId());
         return claim.getId();
+    }
+
+    /**
+     * 管理员仲裁争议认领单（仅 DISPUTED 可仲裁）
+     * approve=true → APPROVED 并生成核销码 + 通知；approve=false → REJECTED + 认领人信用分 -20 + 通知双方
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void adminArbitrate(Long claimId, Long adminId, boolean approve, String reason) {
+        Claim claim = getById(claimId);
+        if (claim == null) {
+            throw new BizException(3001, "认领单不存在");
+        }
+        if (!"DISPUTED".equals(claim.getStatus())) {
+            throw new BizException(6004, "该认领单不在争议状态（仅 DISPUTED 可仲裁）");
+        }
+        Item item = itemMapper.selectById(claim.getFoundItemId());
+        if (item == null) {
+            throw new BizException(2004, "信息不存在或已删除");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        claim.setReviewedBy(adminId);
+        claim.setUpdatedAt(now);
+        if (approve) {
+            claim.setStatus("APPROVED");
+            claim.setVerifyCode(generateUniqueCode());
+            updateById(claim);
+            messageService.send(claim.getClaimantId(), MessageService.TYPE_CLAIM_PROGRESS,
+                    "争议仲裁结果：认领通过",
+                    "您对「" + item.getTitle() + "」的认领经平台仲裁通过：" + reason + "。请凭核销码与拾获者线下交接。",
+                    claim.getId());
+            messageService.send(item.getUserId(), MessageService.TYPE_CLAIM_PROGRESS,
+                    "争议仲裁结果：认领通过",
+                    "「" + item.getTitle() + "」的认领争议经平台仲裁支持认领人：" + reason + "。",
+                    claim.getId());
+        } else {
+            claim.setStatus("REJECTED");
+            claim.setRejectReason(reason);
+            updateById(claim);
+            changeCredit(claim.getClaimantId(), -20, "认领争议仲裁驳回", claim.getId());
+            releaseItemIfNoActiveClaim(item, now);
+            messageService.send(claim.getClaimantId(), MessageService.TYPE_CLAIM_PROGRESS,
+                    "争议仲裁结果：认领驳回",
+                    "您对「" + item.getTitle() + "」的认领经平台仲裁驳回：" + reason + "。信用分 -20。",
+                    claim.getId());
+            messageService.send(item.getUserId(), MessageService.TYPE_CLAIM_PROGRESS,
+                    "争议仲裁结果：认领驳回",
+                    "「" + item.getTitle() + "」的认领争议经平台仲裁驳回：" + reason + "。",
+                    claim.getId());
+        }
+        auditLogService.record(adminId, "ARBITRATE", "CLAIM", claimId,
+                "{\"approve\":" + approve + ",\"reason\":\"" + reason.replace("\"", "'") + "\"}");
     }
 
     // ------------------------------------------------------------------

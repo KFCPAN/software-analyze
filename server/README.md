@@ -1,17 +1,54 @@
 # lnf-server · 校园失物招领智能匹配平台（后端）
 
-《软件系统分析与设计综合实践》课程项目后端工程。当前进度：**M1 工程骨架 + 用户认证**、**M2 信息发布模块**（基础数据 / 文件上传 / 失物招领发布与检索）、**M3 认领流程模块**（claims 状态机 + 核销码 + 信用分联动）、**M4 站内消息**（列表 / 未读数 / 标记已读）、**M5 智能匹配接入**（发布即匹配：文本向量化 → pgvector 粗筛 → 多因子打分 → 命中通知），CLIP 图像向量与后台仲裁后续迭代。
+《软件系统分析与设计综合实践》课程项目后端工程。openapi 契约接口已全部实现：**M1 认证**、**M2 信息发布**、**M3 认领状态机**、**M4 站内消息**、**M5 智能匹配接入**、**M6 后台管理**（信息审核 / 封禁 / 争议仲裁 / 运营看板）、**M7 CLIP 图像匹配通道**（双通道打分）。
 
-## 匹配引擎对接（M5）
+## M6 后台管理接口（仅 ADMIN / REVIEWER 角色，USER 返回 403）
+
+### 22. 信息审核列表 `GET /api/admin/items?status=&keyword=&page=&size=`
+
+全状态可查，含发布者信息 `{id,username,nickname,creditScore,status}`，分页返回。
+
+### 23. 封禁/解封 `POST /api/admin/users/{id}/ban`，body `{ban, reason}`
+
+封禁：users.status→BANNED、信用分 -20（写 credit_logs）、写 audit_logs（BAN_USER）、SYSTEM 站内信通知；
+解封：→ACTIVE（信用不回加，UNBAN_USER 审计）。被封用户登录返回 1004。不能封禁 ADMIN（6001），重复操作报 6005。
+
+### 24. 争议认领单队列 `GET /api/admin/claims?status=DISPUTED&page=&size=`（契约外扩展）
+
+含双方信息、特征作答明细（matched 标记）、争议原因。
+
+### 25. 争议仲裁 `POST /api/admin/claims/{id}/arbitrate`，body `{approve, reason}`（reason 必填）
+
+approve=true → 认领单 APPROVED + 生成核销码 + 通知双方；
+approve=false → REJECTED + 认领人信用分 -20（"认领争议仲裁驳回"）+ item 视情况回 OPEN + 通知双方；
+均写 audit_logs（ARBITRATE）。仅 DISPUTED 状态可仲裁（6004）。
+
+### 26. 运营看板 `GET /api/admin/stats/overview`
+
+`{totalItems, totalLost, totalFound, matchHitRate, avgRecoverHours, completedClaims, hotLocations[]}`。
+matchHitRate = CONFIRMED ÷（CONFIRMED+REJECTED）；avgRecoverHours = COMPLETED 认领单申请→核销平均小时数；
+hotLocations 按 location_id 分组 Top5。
+
+### 附：修改个人资料 `PUT /api/users/me`
+
+body `{nickname, phone}`（均选填），返回更新后的用户信息（手机号脱敏）。
+
+## 匹配引擎对接（M5 文本 + M7 图像）
 
 依赖 matcher 微服务（`../matcher/`，FastAPI，端口 9000，见该目录 README）。
 
-- 发布/编辑（标题或描述变更）后，事务提交后异步（`@Async` 线程池）调 matcher `POST /embed/text`，512 维向量写回 `items.text_vector`
-- matcher 不可用时仅记 WARN 日志降级，**不阻塞发布**（待补算队列留 TODO）
-- 匹配计算：pgvector 余弦距离粗筛 Top20（反向类型 + OPEN + 先丢后捡时间约束）→
-  多因子打分 → `totalScore = 0.6*text + 0.2*time + 0.2*location`（权重/阈值见 yml `match.*`），
-  ≥ 0.55 写入 matches（唯一约束冲突忽略），命中后双方各收到一条 `MATCH_HIT` 站内信
+- 发布/编辑（标题、描述或图片变更）后，事务提交后异步（`@Async` 线程池）向量化：
+  - 文本：调 matcher `POST /embed/text`（标题 + 空格 + 描述），512 维写回 `items.text_vector`
+  - 图像：item 有图片时取**首图**字节调 `POST /embed/image`（multipart），512 维写回 `items.image_vector`
+  - 两路各自独立容错，matcher 不可用仅记 WARN 日志降级，**不阻塞发布**（待补算队列留 TODO）
+- 匹配计算：文本、图像两路 pgvector 余弦距离粗筛各取 Top20（反向类型 + OPEN + 先丢后捡时间约束），
+  候选 id 取**并集**后批量取因子输入（text_score 在 SQL 算，image_vector 以文本带回 Java 算点积）→
+  多因子打分 → ≥ 0.55 写入 matches（唯一约束冲突忽略），命中后双方各收到一条 `MATCH_HIT` 站内信
+- **两套权重**（yml `match.weights.*` / `match.weights.with-image.*`）：
+  - 双方都有图像向量：`totalScore = 0.5*text + 0.2*image + 0.15*time + 0.15*location`
+  - 双方均无或仅单方有图：`totalScore = 0.6*text + 0.2*time + 0.2*location`，imageScore 记 NULL
 - 因子规则：timeScore = max(0.3, 1.0 - 0.1×天数)；locationScore = 同地点 1.0 / 同校区 0.6 / 跨校区 0.2 / 任一方为空 0.4
+- M7 端到端实测：双方带同一张图配对 imageScore=1.0000、totalScore=0.9485；单方带图 imageScore=NULL、按无图像权重 totalScore=0.9347（23/23 断言通过）
 
 ## 技术栈
 
@@ -248,17 +285,18 @@ curl "http://localhost:8080/api/messages?unreadOnly=true&page=1&size=10" -H "Aut
 
 仅消息归属人本人可操作（他人返回 4002）；幂等——已是已读也返回成功。
 
-## M5 智能匹配接口
+## M5/M7 智能匹配接口
 
 ### 20. 匹配候选列表 `GET /api/matches?itemId=`（需 JWT，仅该 item 发布者本人）
 
 ```bash
 curl "http://localhost:8080/api/matches?itemId=1" -H "Authorization: Bearer $TOKEN"
 # [{"matchId":1,"item":{"id":2,"title":"雨伞","coverImage":null,"locationName":"清真食堂","eventTime":"2026-09-15 18:00:00"},
-#   "textScore":0.6418,"imageScore":null,"timeScore":0.9792,"locationScore":1.0,"totalScore":0.7809,"status":"PENDING"}]
+#   "textScore":0.6418,"imageScore":0.9414,"timeScore":0.9792,"locationScore":1.0,"totalScore":0.8068,"status":"PENDING"}]
 ```
 
 按 totalScore 降序；REJECTED 不返回；`item` 为**对方**信息的摘要。
+`imageScore` 仅当双方都有图像向量时非 null（此时 totalScore 按含图像权重计算），否则为 null。
 
 ### 21. 匹配反馈 `POST /api/matches/{id}/feedback`（需 JWT，仅相关 item 发布者）
 
@@ -309,6 +347,10 @@ curl -X POST http://localhost:8080/api/matches/1/feedback \
 | 5001 | 匹配记录不存在 |
 | 5002 | 无权查看/操作他人的匹配记录 |
 | 5003 | 该匹配记录已反馈过 |
+| 6001 | 不能封禁管理员账号 |
+| 6002 | 用户不存在 |
+| 6004 | 认领单不在争议状态（仅 DISPUTED 可仲裁） |
+| 6005 | 重复封禁/解封（已是目标状态） |
 | 500  | 系统异常 |
 
 ## 配置说明（application.yml）

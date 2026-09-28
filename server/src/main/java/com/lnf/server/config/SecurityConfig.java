@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories", "/api/locations").permitAll()
                         .requestMatchers("/files/**", "/error").permitAll()
+                        // 后台接口：仅 ADMIN / REVIEWER 角色（JwtAuthFilter 授予 ROLE_ 前缀权限）
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "REVIEWER")
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) ->

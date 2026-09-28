@@ -351,6 +351,47 @@
         "responses": { "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
       }
     },
+    "/api/admin/claims": {
+      "get": {
+        "tags": ["后台"],
+        "summary": "争议认领单队列（默认 DISPUTED）",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "default": "DISPUTED" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功；含双方信息、特征作答明细（matched 标记）、争议原因",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" }, "example": { "code": 0, "message": "success", "data": { "total": 1, "page": 1, "size": 10, "list": [ { "id": 40001, "foundItem": { "id": 20001, "title": "黑色皮质卡包" }, "claimant": { "id": 10002, "username": "zhangsan", "nickname": "张三", "creditScore": 100 }, "publisher": { "id": 10003, "username": "lisi", "nickname": "李四", "creditScore": 105 }, "featureAnswers": [ { "featureKey": "卡内姓名", "answer": "张三", "matched": true } ], "disputeReason": "回答正确但拾获者存疑", "status": "DISPUTED", "createdAt": "2026-09-12 10:00:00" } ] } } } }
+          }
+        }
+      }
+    },
+    "/api/admin/claims/{id}/arbitrate": {
+      "post": {
+        "tags": ["后台"],
+        "summary": "争议仲裁（支持认领人/驳回）",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["approve", "reason"],
+                "properties": {
+                  "approve": { "type": "boolean", "description": "true=支持认领人（APPROVED 并生成核销码）；false=驳回（REJECTED，认领人信用分 -20）" },
+                  "reason": { "type": "string", "description": "仲裁理由，必填" }
+                },
+                "example": { "approve": false, "reason": "特征作答不足以证明归属" }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "仲裁完成：状态切换、信用分/核销码联动、通知双方、写 audit_logs", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } } } }
+      }
+    },
     "/api/admin/stats/overview": {
       "get": {
         "tags": ["后台"],

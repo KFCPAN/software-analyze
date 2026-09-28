@@ -77,9 +77,8 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
 
         saveFeatures(item.getId(), request);
 
-        // 事务提交后异步：文本向量化写回 + 触发智能匹配（matcher 不可用不阻塞发布）
+        // 事务提交后异步：文本 + 首图图像向量化写回 + 触发智能匹配（matcher 不可用不阻塞发布）
         triggerVectorizeAfterCommit(item.getId());
-        // TODO(CLIP 图像向量)：首图 image_vector 下周接入后在此一并触发
         return item.getId();
     }
 
@@ -164,9 +163,12 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
         Item item = checkOwnerAndEditable(itemId, userId);
         validateRequest(request);
 
-        // 标题/描述变化会影响文本向量，需异步重算并重新匹配
+        // 标题/描述变化影响文本向量，首图变化影响图像向量，都需异步重算并重新匹配
         boolean textChanged = !item.getTitle().equals(request.getTitle())
                 || !item.getDescription().equals(request.getDescription());
+        List<String> oldImages = item.getImages() == null ? List.of() : item.getImages();
+        List<String> newImages = request.getImages() == null ? List.of() : request.getImages();
+        boolean imagesChanged = !oldImages.equals(newImages);
 
         applyRequest(item, request);
         item.setUpdatedAt(OffsetDateTime.now());
@@ -177,7 +179,7 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
                 .eq(ItemFeature::getItemId, itemId));
         saveFeatures(itemId, request);
 
-        if (textChanged) {
+        if (textChanged || imagesChanged) {
             triggerVectorizeAfterCommit(itemId);
         }
     }

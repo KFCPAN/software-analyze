@@ -40,13 +40,20 @@ app:
 matcher:
   base-url: http://localhost:9000
 
-# 智能匹配：综合分 = 0.6*文本 + 0.2*时间 + 0.2*地点，≥ 阈值才写入 matches
+# 智能匹配：综合分 ≥ 阈值才写入 matches。两套权重：
+# 默认（双方均无图或仅单方有图）：0.6*文本 + 0.2*时间 + 0.2*地点
+# 双方都有图像向量：0.5*文本 + 0.2*图像 + 0.15*时间 + 0.15*地点
 match:
   threshold: 0.55
   weights:
     text: 0.6
     time: 0.2
     location: 0.2
+    with-image:
+      text: 0.5
+      image: 0.2
+      time: 0.15
+      location: 0.15
 
 logging:
   level:
