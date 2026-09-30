@@ -2,7 +2,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 
-// baseURL 优先取 .env 里的 Apifox Mock 地址，未配置时用 /api（走 vite 代理）
+// baseURL 优先取 .env/.env.development 里的真实后端地址，未配置时用 /api（走 vite 代理）
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const request = axios.create({
@@ -22,10 +22,22 @@ request.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// 响应拦截器
+// 响应拦截器：处理后端统一返回 { code, message, data }（业务错误 code!=0 时也走 reject）
 request.interceptors.response.use(
   (response) => {
-    return response.data
+    const res = response.data
+    if (res && typeof res.code === 'number' && res.code !== 0) {
+      if (res.code === 401) {
+        ElMessage.error('登录已过期，请重新登录')
+        localStorage.removeItem('token')
+        localStorage.removeItem('userInfo')
+        router.push('/login')
+      } else {
+        ElMessage.error(res.message || '请求失败')
+      }
+      return Promise.reject(new Error(res.message || '请求失败'))
+    }
+    return res
   },
   (error) => {
     if (error.response) {

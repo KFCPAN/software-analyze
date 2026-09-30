@@ -1,26 +1,21 @@
 import request from '@/utils/request'
 
-// 获取消息列表
+// 获取消息列表（分页，MessagePageVO 含 unreadCount）
 export function getMessages(params) {
-  return request.get('/message/list', { params })
+  return request.get('/api/messages', { params })
 }
 
 // 标记已读
 export function markRead(id) {
-  return request.put(`/message/${id}/read`)
+  return request.post(`/api/messages/${id}/read`)
 }
 
-// 全部已读
-export function markAllRead() {
-  return request.put('/message/read-all')
-}
-
-// 获取未读数量
+// 未读数量：后端无独立接口，从列表响应的 unreadCount 拿
 export function getUnreadCount() {
-  return request.get('/message/unread-count')
+  return request.get('/api/messages', { params: { page: 1, size: 1 } })
 }
 
-// 更新订阅设置
-export function updateSubscription(data) {
-  return request.put('/message/subscription', data)
+// 全部已读：后端无批量接口，页面层循环 markRead（预留函数名）
+export function markAllRead() {
+  return request.post('/api/messages/read-all')
 }

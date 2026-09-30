@@ -6,8 +6,8 @@
         <p>登录后发布信息、接收匹配推送</p>
       </div>
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleLogin">
-        <el-form-item label="邮箱/学号" prop="email">
-          <el-input v-model="form.email" placeholder="请输入校园邮箱或学号" size="large">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" placeholder="请输入用户名" size="large">
             <template #prefix><el-icon><User /></el-icon></template>
           </el-input>
         </el-form-item>
@@ -42,12 +42,12 @@ const formRef = ref(null)
 const loading = ref(false)
 
 const form = reactive({
-  email: '',
+  username: '',
   password: ''
 })
 
 const rules = {
-  email: [{ required: true, message: '请输入邮箱或学号', trigger: 'blur' }],
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
@@ -61,11 +61,7 @@ async function handleLogin() {
     ElMessage.success('登录成功')
     router.push('/home')
   } catch (e) {
-    // 演示模式：API未就绪时模拟登录
-    userStore.setToken('mock-token-' + Date.now())
-    userStore.setUserInfo({ id: 1, username: form.email, role: 'user', credit: 100 })
-    ElMessage.success('登录成功（演示模式）')
-    router.push('/home')
+    // 联调模式：登录失败由拦截器统一提示，不再演示登录
   } finally {
     loading.value = false
   }

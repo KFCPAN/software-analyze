@@ -14,13 +14,13 @@
 
       <!-- 招领/遗失 双tab -->
       <div class="filter-section">
-        <el-radio-group v-model="activeTab" @change="loadList">
-          <el-radio-button label="found">招领</el-radio-button>
-          <el-radio-button label="lost">遗失</el-radio-button>
+        <el-radio-group v-model="activeTab" @change="handleTabChange">
+          <el-radio-button label="FOUND">招领</el-radio-button>
+          <el-radio-button label="LOST">遗失</el-radio-button>
         </el-radio-group>
         <div class="filter-right">
-          <el-select v-model="filterCategory" placeholder="分类" clearable style="width: 120px" @change="loadList">
-            <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
+          <el-select v-model="filterCategory" placeholder="分类" clearable style="width: 140px" @change="loadList">
+            <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
           </el-select>
         </div>
       </div>
@@ -60,9 +60,9 @@ import { ElMessage } from 'element-plus'
 const router = useRouter()
 
 const searchKeyword = ref('')
-const activeTab = ref('found')
-const filterCategory = ref('')
-const categories = ref(['电子产品', '证件卡片', '钥匙', '书籍文具', '衣物配饰', '其他'])
+const activeTab = ref('FOUND')
+const filterCategory = ref(null)
+const categories = ref([])
 const list = ref([])
 const total = ref(0)
 const currentPage = ref(1)
@@ -71,24 +71,42 @@ const loading = ref(false)
 
 onMounted(() => {
   loadList()
+  loadCategories()
 })
+
+async function loadCategories() {
+  try {
+    const res = await getCategories()
+    categories.value = res.data || []
+  } catch (e) {
+    categories.value = [
+      { id: 1, name: '电子产品' }, { id: 2, name: '证件卡片' }, { id: 3, name: '钥匙' },
+      { id: 4, name: '书籍文具' }, { id: 5, name: '衣物配饰' }, { id: 6, name: '其他' }
+    ]
+  }
+}
+
+function handleTabChange() {
+  currentPage.value = 1
+  loadList()
+}
 
 async function loadList() {
   loading.value = true
   try {
     const res = await getPostList({
       page: currentPage.value,
-      pageSize: pageSize.value,
+      size: pageSize.value,
       type: activeTab.value,
-      category: filterCategory.value,
-      keyword: searchKeyword.value
+      categoryId: filterCategory.value || undefined,
+      keyword: searchKeyword.value || undefined
     })
     list.value = res.data?.list || []
     total.value = res.data?.total || 0
   } catch (e) {
-    // API未就绪时使用模拟数据
+    // 接口不可达时兜底演示数据
     list.value = getMockData()
-    total.value = 12
+    total.value = 8
   } finally {
     loading.value = false
   }
@@ -99,22 +117,21 @@ function handleSearch() {
   loadList()
 }
 
-// 模拟数据（后端/Mock接口就绪后删除）
+// 模拟数据（真实接口就绪后删除）
 function getMockData() {
   const tab = activeTab.value
   const lostData = ['黑色钱包', 'iPhone 14手机', '校园卡', '蓝色雨伞', 'AirPods耳机', '高数教材', '钥匙串', '水杯']
   const foundData = ['捡到钱包', '捡到手机', '捡到校园卡', '捡到雨伞', '捡到耳机', '捡到教材', '捡到钥匙', '捡到水杯']
   return Array.from({ length: 8 }, (_, i) => ({
     id: i + 1,
-    title: (tab === 'lost' ? lostData : foundData)[i],
-    description: ['在图书馆三楼丢失，内有身份证和校园卡', '食堂二楼捡到，屏幕有裂痕', '教学楼A座捡到，姓名张三', '体育馆门口捡到', '操场附近丢失，白色充电盒', '逸夫楼捡到，内有笔记', '宿舍楼下捡到，有小熊挂件', '奶茶店捡到，粉色保温杯'][i],
-    location: ['图书馆', '食堂', '教学楼', '体育馆', '操场', '逸夫楼', '宿舍楼', '奶茶店'][i],
-    time: new Date(Date.now() - i * 3600000).toISOString(),
-    category: ['证件卡片', '电子产品', '证件卡片', '衣物配饰', '电子产品', '书籍文具', '钥匙', '其他'][i],
+    title: (tab === 'LOST' ? lostData : foundData)[i],
     type: tab,
-    status: 'active',
-    publisher: '用户' + (i + 1),
-    images: []
+    categoryName: ['证件卡片', '电子产品', '证件卡片', '衣物配饰', '电子产品', '书籍文具', '钥匙', '其他'][i],
+    locationName: ['图书馆', '食堂', '教学楼', '体育馆', '操场', '逸夫楼', '宿舍楼', '奶茶店'][i],
+    eventTime: new Date(Date.now() - i * 3600000).toISOString(),
+    coverImage: '',
+    status: 'OPEN',
+    createdAt: new Date().toISOString()
   }))
 }
 </script>

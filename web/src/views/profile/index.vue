@@ -10,7 +10,7 @@
             <p class="user-email">{{ userStore.userInfo?.email || '未绑定邮箱' }}</p>
             <div class="credit-badge">
               <el-icon><Star /></el-icon>
-              信用分：{{ userStore.userInfo?.credit || 100 }}
+              信用分：{{ userStore.userInfo?.creditScore ?? 100 }}
             </div>
           </div>
         </div>
@@ -27,12 +27,6 @@
             </el-form-item>
             <el-form-item label="手机号">
               <el-input v-model="form.phone" placeholder="选填，匹配成功后展示给对方" />
-            </el-form-item>
-            <el-form-item label="微信号">
-              <el-input v-model="form.wechat" placeholder="选填" />
-            </el-form-item>
-            <el-form-item label="个人简介">
-              <el-input v-model="form.bio" type="textarea" :rows="2" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="saveProfile">保存修改</el-button>
@@ -80,7 +74,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import { useUserStore } from '@/stores/user'
-import { updateUserInfo, getCreditRecords } from '@/api/user'
+import { getUserInfo, updateUserInfo, getCreditRecords } from '@/api/user'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -90,9 +84,7 @@ const activeTab = ref('info')
 const form = reactive({
   username: '',
   email: '',
-  phone: '',
-  wechat: '',
-  bio: ''
+  phone: ''
 })
 
 const settings = reactive({
@@ -103,22 +95,31 @@ const settings = reactive({
 const creditRecords = ref([])
 
 onMounted(() => {
+  loadUserInfo()
+  loadCreditRecords()
+})
+
+async function loadUserInfo() {
+  try {
+    const res = await getUserInfo()
+    userStore.setUserInfo(res.data)
+  } catch (e) {
+    // 接口不可用时用本地已存信息
+  }
   if (userStore.userInfo) {
     form.username = userStore.userInfo.username
     form.email = userStore.userInfo.email
+    form.phone = userStore.userInfo.phone || ''
   }
-  loadCreditRecords()
-})
+}
 
 async function loadCreditRecords() {
   try {
     const res = await getCreditRecords()
     creditRecords.value = res.data || []
   } catch (e) {
-    creditRecords.value = [
-      { id: 1, reason: '如实发布信息', change: 5, time: new Date().toISOString() },
-      { id: 2, reason: '完成认领并好评', change: 10, time: new Date(Date.now() - 86400000).toISOString() }
-    ]
+    // 后端暂无信用记录接口
+    creditRecords.value = []
   }
 }
 
@@ -127,7 +128,7 @@ async function saveProfile() {
     await updateUserInfo(form)
     ElMessage.success('保存成功')
   } catch (e) {
-    ElMessage.success('保存成功（演示模式）')
+    ElMessage.info('后端暂未提供资料更新接口，已记录到联调清单')
   }
 }
 

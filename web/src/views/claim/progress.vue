@@ -11,23 +11,21 @@
             <el-empty v-if="mineList.length === 0 && !loadingMine" description="暂无认领记录" />
             <el-card v-for="item in mineList" :key="item.id" class="list-item" shadow="never">
               <div class="item-header">
-                <span class="item-title">{{ item.postTitle }}</span>
+                <span class="item-title">{{ item.itemTitle }}</span>
                 <el-tag :type="statusType[item.status]" size="small">{{ statusText[item.status] }}</el-tag>
               </div>
               <el-steps :active="stepMap[item.status]" finish-status="success" align-center class="steps">
                 <el-step title="提交申请" />
                 <el-step title="拾获者核验" />
                 <el-step title="线下核销" />
-                <el-step title="完成评价" />
+                <el-step title="完成" />
               </el-steps>
+              <p v-if="item.rejectReason" class="reject-reason">驳回原因：{{ item.rejectReason }}</p>
               <div class="item-actions">
-                <template v-if="item.status === 'approved'">
+                <template v-if="item.status === 'APPROVED'">
                   <el-button type="primary" size="small" @click="showQr(item)">查看核销码</el-button>
                 </template>
-                <template v-if="item.status === 'completed' && !item.reviewed">
-                  <el-button type="success" size="small" @click="goReview(item)">去评价</el-button>
-                </template>
-                <el-button text size="small" @click="$router.push(`/detail/${item.postId}`)">查看物品</el-button>
+                <el-button text size="small" @click="$router.push(`/detail/${item.foundItemId}`)">查看物品</el-button>
               </div>
             </el-card>
           </div>
@@ -39,17 +37,23 @@
             <el-empty v-if="verifyList.length === 0 && !loadingVerify" description="没有待核验的申请" />
             <el-card v-for="item in verifyList" :key="item.id" class="list-item" shadow="never">
               <div class="item-header">
-                <span class="item-title">{{ item.postTitle }}</span>
-                <el-tag type="warning" size="small">待核验</el-tag>
+                <span class="item-title">{{ item.itemTitle }}</span>
+                <el-tag type="warning" size="small">{{ statusText[item.status] || '待核验' }}</el-tag>
               </div>
               <div class="verify-detail">
-                <p><strong>申请人：</strong>{{ item.applicant }}</p>
-                <p><strong>隐藏特征回答：</strong>{{ item.answers?.join(' / ') || '（无回答）' }}</p>
-                <p v-if="item.evidence?.length"><strong>佐证材料：</strong>{{ item.evidence.length }} 张照片</p>
+                <p><strong>申请人：</strong>{{ item.claimant?.nickname || '未知' }}（信用分 {{ item.claimant?.creditScore ?? '-' }}）</p>
+                <p v-for="(f, i) in item.featureAnswers || []" :key="i">
+                  <strong>{{ f.featureKey }}：</strong>{{ f.answer }}
+                  <el-tag v-if="f.matched === true" type="success" size="small">匹配</el-tag>
+                  <el-tag v-else-if="f.matched === false" type="danger" size="small">不匹配</el-tag>
+                </p>
+                <p v-if="!(item.featureAnswers && item.featureAnswers.length)">（无特征回答）</p>
               </div>
               <div class="item-actions">
-                <el-button type="success" size="small" @click="verifyClaim(item, true)">通过</el-button>
-                <el-button type="danger" size="small" @click="verifyClaim(item, false)">拒绝</el-button>
+                <template v-if="item.status === 'PENDING'">
+                  <el-button type="success" size="small" @click="verifyClaim(item, true)">通过</el-button>
+                  <el-button type="danger" size="small" @click="verifyClaim(item, false)">拒绝</el-button>
+                </template>
               </div>
             </el-card>
           </div>
@@ -60,8 +64,8 @@
       <el-dialog v-model="qrVisible" title="线下交接核销码" width="380px">
         <div class="qr-box" v-if="currentItem">
           <QrcodeVue :value="qrValue" :size="220" level="M" />
-          <p class="qr-code">编号：{{ currentItem.qrCode }}</p>
-          <p class="qr-tip">请向拾获者出示此二维码，对方扫码核销后完成交接（一次性有效）</p>
+          <p class="qr-code">核销码：{{ verifyCode }}</p>
+          <p class="qr-tip">请向拾获者出示此二维码/核销码，对方扫码核销后完成交接（{{ expiresAt ? '有效期至 ' + formatTime(expiresAt) : '一次性有效' }}）</p>
         </div>
       </el-dialog>
     </div>
@@ -73,7 +77,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import QrcodeVue from 'qrcode.vue'
-import { getClaimProgress, verifyClaim as apiVerify } from '@/api/claim'
+import { getClaimProgress, verifyClaim as apiVerify, getClaimCode } from '@/api/claim'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -86,23 +90,28 @@ const verifyList = ref([])
 
 const qrVisible = ref(false)
 const currentItem = ref(null)
+const verifyCode = ref('')
+const expiresAt = ref('')
 
 const statusText = {
-  pending: '待核验',
-  approved: '核验通过',
-  completed: '已交接',
-  rejected: '已拒绝'
+  PENDING: '待核验',
+  APPROVED: '核验通过',
+  COMPLETED: '已交接',
+  REJECTED: '已拒绝',
+  DISPUTED: '争议中',
+  EXPIRED: '已超时'
 }
 const statusType = {
-  pending: 'warning',
-  approved: 'primary',
-  completed: 'success',
-  rejected: 'danger'
+  PENDING: 'warning',
+  APPROVED: 'primary',
+  COMPLETED: 'success',
+  REJECTED: 'danger',
+  DISPUTED: 'danger',
+  EXPIRED: 'info'
 }
-const stepMap = { pending: 1, approved: 2, completed: 3, rejected: 1 }
+const stepMap = { PENDING: 1, APPROVED: 2, COMPLETED: 3, REJECTED: 1, DISPUTED: 2, EXPIRED: 1 }
 
-// 核销码内容：接口给的 qrUrl 或生成带 id 的 URL
-const qrValue = computed(() => currentItem.value?.qrUrl || `claim://confirm/${currentItem.value?.id || ''}`)
+const qrValue = computed(() => verifyCode.value || `claim://confirm/${currentItem.value?.id || ''}`)
 
 onMounted(() => {
   loadMine()
@@ -113,13 +122,9 @@ async function loadMine() {
   loadingMine.value = true
   try {
     const res = await getClaimProgress({ scope: 'mine' })
-    mineList.value = res.data?.list || []
+    mineList.value = res.data || []
   } catch (e) {
-    mineList.value = [
-      { id: 1, postId: 1, postTitle: '黑色钱包', status: 'pending', answers: [], reviewed: false },
-      { id: 2, postId: 2, postTitle: 'iPhone 14', status: 'approved', qrCode: 'A8K2M9', qrUrl: 'claim://confirm/A8K2M9', reviewed: false },
-      { id: 3, postId: 3, postTitle: '校园卡', status: 'completed', reviewed: false }
-    ]
+    mineList.value = []
   } finally {
     loadingMine.value = false
   }
@@ -129,37 +134,41 @@ async function loadVerify() {
   loadingVerify.value = true
   try {
     const res = await getClaimProgress({ scope: 'verify' })
-    verifyList.value = res.data?.list || []
+    verifyList.value = res.data || []
   } catch (e) {
-    verifyList.value = [
-      { id: 101, postId: 1, postTitle: '黑色钱包', applicant: '李四', answers: ['钱包内有校园卡和身份证'], evidence: [{ url: '' }] }
-    ]
+    verifyList.value = []
   } finally {
     loadingVerify.value = false
   }
 }
 
-function showQr(item) {
+async function showQr(item) {
   currentItem.value = item
   qrVisible.value = true
+  try {
+    const res = await getClaimCode(item.id)
+    verifyCode.value = res.data?.verifyCode || ''
+    expiresAt.value = res.data?.expiresAt || ''
+  } catch (e) {
+    verifyCode.value = `C${String(item.id).padStart(6, '0')}`
+    expiresAt.value = ''
+  }
 }
 
 async function verifyClaim(item, pass) {
   try {
     await apiVerify(item.id, { pass })
-  } catch (e) {}
-  if (pass) {
-    ElMessage.success('已通过，已生成核销码')
+    ElMessage.success(pass ? '已通过，认领人可查看核销码' : '已拒绝该申请')
     verifyList.value = verifyList.value.filter(i => i.id !== item.id)
     loadMine()
-  } else {
-    ElMessage.warning('已拒绝该申请')
-    verifyList.value = verifyList.value.filter(i => i.id !== item.id)
+  } catch (e) {
+    // 失败由拦截器提示
   }
 }
 
-function goReview(item) {
-  ElMessage.success('跳转评价页（开发中）')
+function formatTime(t) {
+  if (!t) return ''
+  return new Date(t).toLocaleString('zh-CN')
 }
 </script>
 
@@ -199,6 +208,12 @@ function goReview(item) {
   margin-bottom: 16px;
 }
 
+.reject-reason {
+  color: #f56c6c;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
 .item-actions {
   display: flex;
   gap: 8px;
@@ -213,7 +228,7 @@ function goReview(item) {
   border-radius: 6px;
   margin-bottom: 12px;
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.9;
   color: #606266;
 }
 

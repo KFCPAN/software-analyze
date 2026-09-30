@@ -1,33 +1,34 @@
 <template>
   <el-card class="item-card" shadow="hover" @click="handleClick">
     <div class="card-image">
-      <img v-if="item.images && item.images.length" :src="item.images[0]" :alt="item.title" />
+      <img v-if="coverUrl" :src="coverUrl" :alt="item.title" />
       <div v-else class="image-placeholder">
         <el-icon size="48"><Picture /></el-icon>
       </div>
-      <el-tag :type="item.type === 'lost' ? 'danger' : 'success'" size="small" class="type-tag">
-        {{ item.type === 'lost' ? '寻物' : '招领' }}
+      <el-tag :type="item.type === 'LOST' ? 'danger' : 'success'" size="small" class="type-tag">
+        {{ item.type === 'LOST' ? '寻物' : '招领' }}
       </el-tag>
-      <el-tag v-if="item.status === 'resolved'" type="info" size="small" class="status-tag">
+      <el-tag v-if="item.status === 'CLOSED' || item.status === 'ARCHIVED'" type="info" size="small" class="status-tag">
         已完结
       </el-tag>
     </div>
     <div class="card-content">
       <h3 class="card-title">{{ item.title }}</h3>
-      <p class="card-desc">{{ item.description }}</p>
+      <p class="card-desc">{{ statusText }}</p>
       <div class="card-meta">
-        <span><el-icon><Location /></el-icon> {{ item.location }}</span>
-        <span><el-icon><Clock /></el-icon> {{ formatTime(item.time) }}</span>
+        <span><el-icon><Location /></el-icon> {{ item.locationName || '未知地点' }}</span>
+        <span><el-icon><Clock /></el-icon> {{ formatTime(item.eventTime) }}</span>
       </div>
       <div class="card-footer">
-        <el-tag size="small" type="info">{{ item.category }}</el-tag>
-        <span class="publisher">{{ item.publisher }}</span>
+        <el-tag size="small" type="info">{{ item.categoryName || '未分类' }}</el-tag>
+        <span class="publisher">{{ item.createdAt ? formatDay(item.createdAt) : '' }}</span>
       </div>
     </div>
   </el-card>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -39,6 +40,19 @@ const props = defineProps({
 
 const router = useRouter()
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const coverUrl = computed(() => {
+  const p = props.item.coverImage
+  if (!p) return ''
+  return p.startsWith('http') ? p : `${API_BASE}${p}`
+})
+
+const statusText = computed(() => {
+  const s = props.item.status
+  const map = { OPEN: '进行中', MATCHED: '已匹配', CLAIMING: '认领中', CLOSED: '已完结', ARCHIVED: '已归档' }
+  return (props.item.type === 'LOST' ? '寻找中' : '等待认领') + ' · ' + (map[s] || '')
+})
+
 function handleClick() {
   router.push(`/detail/${props.item.id}`)
 }
@@ -47,6 +61,11 @@ function formatTime(time) {
   if (!time) return ''
   const date = new Date(time)
   return `${date.getMonth() + 1}/${date.getDate()}`
+}
+
+function formatDay(time) {
+  if (!time) return ''
+  return new Date(time).toLocaleDateString('zh-CN')
 }
 </script>
 
@@ -109,11 +128,7 @@ function formatTime(time) {
   font-size: 13px;
   color: #909399;
   margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 38px;
+  min-height: 20px;
 }
 
 .card-meta {

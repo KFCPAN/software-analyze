@@ -9,16 +9,11 @@
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" placeholder="请输入用户名" size="large" />
         </el-form-item>
+        <el-form-item label="昵称" prop="nickname">
+          <el-input v-model="form.nickname" placeholder="请输入昵称（选填）" size="large" />
+        </el-form-item>
         <el-form-item label="校园邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入校园邮箱" size="large" />
-        </el-form-item>
-        <el-form-item label="验证码" prop="code">
-          <div class="code-row">
-            <el-input v-model="form.code" placeholder="请输入邮箱验证码" size="large" />
-            <el-button :disabled="countdown > 0" @click="sendCode">
-              {{ countdown > 0 ? `${countdown}s后重发` : '获取验证码' }}
-            </el-button>
-          </div>
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <el-input v-model="form.password" type="password" placeholder="请输入密码（至少6位）" size="large" show-password />
@@ -47,12 +42,11 @@ import { ElMessage } from 'element-plus'
 const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
-const countdown = ref(0)
 
 const form = reactive({
   username: '',
+  nickname: '',
   email: '',
-  code: '',
   password: '',
   confirmPassword: ''
 })
@@ -71,7 +65,6 @@ const rules = {
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ],
-  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码至少6位', trigger: 'blur' }
@@ -82,29 +75,20 @@ const rules = {
   ]
 }
 
-function sendCode() {
-  if (!form.email) {
-    ElMessage.warning('请先输入邮箱')
-    return
-  }
-  ElMessage.success('验证码已发送（演示模式）')
-  countdown.value = 60
-  const timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) clearInterval(timer)
-  }, 1000)
-}
-
 async function handleRegister() {
   await formRef.value.validate()
   loading.value = true
   try {
-    await register(form)
+    await register({
+      username: form.username,
+      nickname: form.nickname || form.username,
+      email: form.email,
+      password: form.password
+    })
     ElMessage.success('注册成功，请登录')
     router.push('/login')
   } catch (e) {
-    ElMessage.success('注册成功（演示模式），请登录')
-    router.push('/login')
+    // 注册失败由拦截器统一提示
   } finally {
     loading.value = false
   }

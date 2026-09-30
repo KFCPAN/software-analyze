@@ -1,36 +1,39 @@
 import request from '@/utils/request'
 
-// 提交认领申请
+// 提交认领申请（foundItemId + 隐藏特征问答）
 export function submitClaim(postId, data) {
-  return request.post(`/claim/${postId}`, data)
+  return request.post('/api/claims', { foundItemId: postId, answers: data?.answers || [] })
 }
 
-// 获取认领进度
+// 认领进度：scope=mine 我的认领；scope=verify 待我核验
 export function getClaimProgress(params) {
-  return request.get('/claim/progress', { params })
+  if (params?.scope === 'verify') {
+    return request.get('/api/claims/todo', { params: {} })
+  }
+  return request.get('/api/claims/mine', { params: {} })
 }
 
-// 获取认领详情
-export function getClaimDetail(id) {
-  return request.get(`/claim/${id}`)
-}
-
-// 拾获者核验认领
+// 核验认领（拾获者视角：action=APPROVE/REJECT）
 export function verifyClaim(id, data) {
-  return request.put(`/claim/${id}/verify`, data)
+  return request.post(`/api/claims/${id}/review`, { action: data?.pass ? 'APPROVE' : 'REJECT', reason: data?.reason || '' })
 }
 
-// 线下核销（扫码）
-export function confirmClaim(id) {
-  return request.put(`/claim/${id}/confirm`)
+// 认领人获取交接核销码
+export function getClaimCode(id) {
+  return request.get(`/api/claims/${id}/code`)
 }
 
-// 提交评价
+// 拾获者扫码核销（交接完成）
+export function confirmClaim(verifyCode) {
+  return request.post('/api/claims/verify', { verifyCode })
+}
+
+// 提交评价（后端暂并入核验流程，预留）
 export function submitReview(id, data) {
-  return request.post(`/claim/${id}/review`, data)
+  return request.post(`/api/claims/${id}/review`, data)
 }
 
-// 争议申诉
+// 争议申诉（后端暂未独立接口，预留）
 export function submitAppeal(id, data) {
-  return request.post(`/claim/${id}/appeal`, data)
+  return request.post(`/api/claims/${id}/appeal`, data)
 }

@@ -75,7 +75,7 @@ watch(() => route.path, () => {
 async function fetchUnreadCount() {
   try {
     const res = await getUnreadCount()
-    userStore.setUnreadCount(res.data?.count || 0)
+    userStore.setUnreadCount(res.data?.unreadCount || 0)
   } catch (e) {
     // 静默失败
   }

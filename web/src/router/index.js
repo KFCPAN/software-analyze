@@ -42,6 +42,12 @@ const routes = [
     meta: { title: '我的发布', requiresAuth: true }
   },
   {
+    path: '/matches',
+    name: 'MatchResult',
+    component: () => import('@/views/match/index.vue'),
+    meta: { title: '匹配结果', requiresAuth: true }
+  },
+  {
     path: '/detail/:id',
     name: 'Detail',
     component: () => import('@/views/detail/index.vue'),
