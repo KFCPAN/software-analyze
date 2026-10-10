@@ -42,15 +42,16 @@ public class MessageService extends ServiceImpl<MessageMapper, Message> {
     }
 
     /**
-     * 当前用户消息列表：created_at 倒序分页，可按未读过滤，附未读总数
+     * 当前用户消息列表：created_at 倒序分页，可按未读/类型过滤，附未读总数
      */
-    public MessagePageVO pageMessages(Long userId, boolean unreadOnly, long page, long size) {
+    public MessagePageVO pageMessages(Long userId, boolean unreadOnly, String type, long page, long size) {
         if (page < 1 || size < 1 || size > 100) {
             throw new BizException(400, "分页参数不合法（page≥1，1≤size≤100）");
         }
         Page<Message> result = page(new Page<>(page, size), new LambdaQueryWrapper<Message>()
                 .eq(Message::getUserId, userId)
                 .eq(unreadOnly, Message::getIsRead, false)
+                .eq(type != null && !type.isBlank(), Message::getType, type)
                 .orderByDesc(Message::getCreatedAt));
         Long unreadCount = baseMapper.selectCount(new LambdaQueryWrapper<Message>()
                 .eq(Message::getUserId, userId)
@@ -75,6 +76,16 @@ public class MessageService extends ServiceImpl<MessageMapper, Message> {
         }
         message.setIsRead(true);
         updateById(message);
+    }
+
+    /**
+     * 全部标记已读（当前用户所有未读消息），返回实际更新条数
+     */
+    public int markAllRead(Long userId) {
+        return baseMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Message>()
+                .eq(Message::getUserId, userId)
+                .eq(Message::getIsRead, false)
+                .set(Message::getIsRead, true));
     }
 
     private MessageVO toVO(Message message) {

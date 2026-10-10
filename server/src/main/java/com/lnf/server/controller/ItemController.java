@@ -93,6 +93,14 @@ public class ItemController {
         return Result.ok();
     }
 
+    /**
+     * 认领页回显该信息的隐藏特征问题（只返回问题，不返回答案）
+     */
+    @GetMapping("/{id}/claim-questions")
+    public Result<List<String>> claimQuestions(@PathVariable Long id) {
+        return Result.ok(itemService.claimQuestions(id));
+    }
+
     private Long currentUserId(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof LoginUser loginUser)) {
             throw new BizException(401, "未登录或登录已过期");

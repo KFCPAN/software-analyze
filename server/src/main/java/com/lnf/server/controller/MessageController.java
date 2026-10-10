@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 /**
  * 站内消息
  */
@@ -25,14 +27,16 @@ public class MessageController {
     private final MessageService messageService;
 
     /**
-     * 消息列表（created_at 倒序分页，可按未读过滤）
+     * 消息列表（created_at 倒序分页，可按未读/类型过滤）
+     * type 可选：MATCH_HIT / CLAIM_PROGRESS / REVIEW_RESULT / SYSTEM
      */
     @GetMapping
     public Result<MessagePageVO> page(@RequestParam(defaultValue = "false") boolean unreadOnly,
+                                      @RequestParam(required = false) String type,
                                       @RequestParam(defaultValue = "1") long page,
                                       @RequestParam(defaultValue = "10") long size,
                                       Authentication authentication) {
-        return Result.ok(messageService.pageMessages(currentUserId(authentication), unreadOnly, page, size));
+        return Result.ok(messageService.pageMessages(currentUserId(authentication), unreadOnly, type, page, size));
     }
 
     /**
@@ -42,6 +46,15 @@ public class MessageController {
     public Result<Void> markRead(@PathVariable Long id, Authentication authentication) {
         messageService.markRead(id, currentUserId(authentication));
         return Result.ok();
+    }
+
+    /**
+     * 全部标记已读（批量），返回更新条数
+     */
+    @PostMapping("/read-all")
+    public Result<Map<String, Integer>> markAllRead(Authentication authentication) {
+        int updated = messageService.markAllRead(currentUserId(authentication));
+        return Result.ok(Map.of("updated", updated));
     }
 
     private Long currentUserId(Authentication authentication) {

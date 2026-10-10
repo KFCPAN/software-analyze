@@ -196,6 +196,23 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
     }
 
     /**
+     * 认领页回显：返回该信息的隐藏特征问题列表（仅 featureKey，答案永不出库）。
+     * 信息不存在时抛 4001。
+     */
+    public List<String> claimQuestions(Long itemId) {
+        Item item = getById(itemId);
+        if (item == null) {
+            throw new BizException(4001, "信息不存在");
+        }
+        return itemFeatureMapper.selectList(new LambdaQueryWrapper<ItemFeature>()
+                        .eq(ItemFeature::getItemId, itemId)
+                        .orderByAsc(ItemFeature::getId))
+                .stream()
+                .map(ItemFeature::getFeatureKey)
+                .toList();
+    }
+
+    /**
      * 我发布的信息列表（可选状态过滤）
      */
     public List<ItemListVO> mine(Long userId, String status) {
