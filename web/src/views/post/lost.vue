@@ -15,10 +15,20 @@
         <el-form-item label="丢失时间" prop="eventTime">
           <el-date-picker v-model="form.eventTime" type="datetime" placeholder="选择丢失时间" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="丢失地点" prop="locationId">
-          <el-select v-model="form.locationId" placeholder="选择地点" filterable style="width: 100%">
-            <el-option v-for="loc in locations" :key="loc.id" :label="loc.name" :value="loc.id" />
-          </el-select>
+        <el-form-item label="丢失地点" prop="location">
+          <el-cascader
+            v-model="form.locationPath"
+            :options="locationOptions"
+            placeholder="选择校区和具体地点"
+            style="width: 100%"
+            clearable
+          />
+          <el-input
+            v-model="form.customLocation"
+            class="custom-loc-input"
+            placeholder="不在列表中？直接填写，如：文华楼东区12层自习区"
+            maxlength="100"
+          />
         </el-form-item>
         <el-form-item label="详细描述" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="4" placeholder="描述物品特征、品牌、颜色、内含物品等，越详细匹配越准" />
@@ -59,6 +69,7 @@ const loading = ref(false)
 
 const categories = ref([])
 const locations = ref([])
+const locationOptions = ref([])
 
 const fileList = ref([])
 
@@ -66,7 +77,8 @@ const form = reactive({
   title: '',
   categoryId: null,
   eventTime: '',
-  locationId: null,
+  locationPath: [],
+  customLocation: '',
   description: '',
   images: []
 })
@@ -75,7 +87,17 @@ const rules = {
   title: [{ required: true, message: '请输入物品名称', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   eventTime: [{ required: true, message: '请选择丢失时间', trigger: 'change' }],
-  locationId: [{ required: true, message: '请选择丢失地点', trigger: 'change' }],
+  location: [{
+    validator: (rule, value, callback) => {
+      const hasCascader = form.locationPath && form.locationPath.length > 0
+      if (!hasCascader && !form.customLocation.trim()) {
+        callback(new Error('请选择或填写丢失地点'))
+      } else {
+        callback()
+      }
+    },
+    trigger: 'change'
+  }],
   description: [{ required: true, message: '请填写详细描述', trigger: 'blur' }]
 }
 
@@ -84,14 +106,25 @@ onMounted(async () => {
     const [catRes, locRes] = await Promise.all([getCategories(), getLocations()])
     categories.value = catRes.data || []
     locations.value = locRes.data || []
+    locationOptions.value = locations.value.map(loc => ({
+      value: loc.id,
+      label: loc.name,
+      children: (loc.children || []).map(child => ({ value: child.id, label: child.name }))
+    }))
   } catch (e) {
     categories.value = [
       { id: 1, name: '电子产品' }, { id: 2, name: '证件卡片' }, { id: 3, name: '钥匙' },
       { id: 4, name: '书籍文具' }, { id: 5, name: '衣物配饰' }, { id: 6, name: '其他' }
     ]
-    locations.value = [
-      { id: 1, name: '图书馆' }, { id: 2, name: '教学楼' }, { id: 3, name: '食堂' },
-      { id: 4, name: '体育馆' }, { id: 5, name: '操场' }, { id: 6, name: '宿舍楼' }, { id: 7, name: '其他' }
+    locationOptions.value = [
+      {
+        value: 1, label: '海淀校区',
+        children: [
+          { value: 11, label: '图书馆' }, { value: 12, label: '教学楼' },
+          { value: 13, label: '食堂' }, { value: 14, label: '体育馆' },
+          { value: 15, label: '操场' }, { value: 16, label: '宿舍楼' }
+        ]
+      }
     ]
   }
 })
@@ -112,10 +145,12 @@ async function handleSubmit() {
       if (res.data?.path) paths.push(res.data.path)
     }
     // 2. 发布信息
+    const locPath = form.locationPath || []
     await postLost({
       title: form.title,
       categoryId: form.categoryId,
-      locationId: form.locationId,
+      locationId: locPath.length ? locPath[locPath.length - 1] : null,
+      customLocation: form.customLocation.trim() || undefined,
       eventTime: form.eventTime ? new Date(form.eventTime).toISOString() : '',
       description: form.description,
       images: paths
@@ -157,5 +192,9 @@ async function handleSubmit() {
   font-size: 12px;
   color: #909399;
   margin-top: 4px;
+}
+
+.custom-loc-input {
+  margin-top: 8px;
 }
 </style>
