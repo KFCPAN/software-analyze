@@ -11,19 +11,32 @@
 
 ```
 ├── docs/            # 所有文档（不进代码目录）
-│   ├── report/      #   报告初稿.docx（每周往里填，红色【待补充】为待办）
+│   ├── report/      #   报告初稿.docx
 │   ├── uml/         #   用例图/类图/时序图/ER图（.drawio 源文件 + PNG）
-│   ├── ui/          #   原型图
-│   └── research/    #   问卷、竞品分析、调研数据
+│   ├── ui/          #   原型图、页面层级树图
+│   ├── api/         #   Apifox 上手指南
+│   ├── research/    #   问卷、竞品分析、匹配实验结果
+│   ├── 启动指南.md   #   ★ 全栈启动步骤（新成员先看这个）
+│   └── 联调问题清单*.md
+├── api/             # openapi.json（接口契约，Apifox 可导入）
 ├── dataset/         # 匹配引擎模拟数据集
-│   ├── 模拟数据集模板.xlsx
+│   ├── sim_dataset.xlsx
 │   └── photos/      #   照片，文件名 = 数据编号.jpg
-├── db/              # 建表 SQL、初始化数据 SQL
-├── server/          # Java 后端（Spring Boot 3）
+├── db/              # 建表 SQL（init.sql，10 张表）
+├── scripts/         # 数据导入、匹配实验评估脚本
+├── server/          # Java 后端（Spring Boot 3，31 个接口）
 ├── matcher/         # Python 匹配引擎（FastAPI + BGE + CLIP）
-├── web/             # Vue3 前端
+├── web/             # Vue3 前端（Vite + Element Plus）
 └── deploy/          # docker-compose.yml（一键起 PostgreSQL+pgvector）
 ```
+
+## 当前进度（截至第 7 周）
+
+- 后端 31 个接口全部实现并实测通过（含第 6 周新增：消息批量已读 / 类型筛选、信用流水、认领问题回显）
+- 匹配引擎双模型（BGE 文本 + CLIP 图像）跑通，阈值实验完成（推荐 0.70，详见 docs/research/匹配实验结果.md）
+- 前端 19 个页面完成并与真实接口联调
+- 数据库已导入 205 条演示数据（102 失物 + 103 招领，含 205 张实物照片）
+- UML 图（用例图 / 类图 / 时序图 / ER 图）见 docs/uml/
 
 ## 分支规范
 
@@ -57,20 +70,25 @@
 
 ## 快速开始（开发环境）
 
+**详细步骤、验证方法、常见问题见 [docs/启动指南.md](docs/启动指南.md)。** 简版：
+
 ```bash
 # 1. 起数据库（需要 Docker Desktop）
-cd deploy && docker compose up -d
-#    注意：国内直连 Docker Hub 可能拉取失败，改用加速站拉一次再启动：
+docker start lnf-postgres
+#    首次搭建：cd deploy && docker compose up -d，再执行 db/init.sql
+#    国内直连 Docker Hub 可能拉取失败，改用加速站拉一次再启动：
 #    docker pull docker.m.daocloud.io/pgvector/pgvector:pg16
 #    docker tag  docker.m.daocloud.io/pgvector/pgvector:pg16 pgvector/pgvector:pg16
 
-# 2. 初始化数据库
-#    用 DBeaver 连接 localhost:5432（账号密码见 deploy/docker-compose.yml）
-#    执行 db/ 下的建表 SQL
+# 2. 匹配引擎（端口 9000）
+cd matcher && .venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 9000
 
-# 3. 后端（待第 5 周初始化后补充）
+# 3. 后端（端口 8080）—— ⚠️ 不要用 mvn spring-boot:run（中文路径必现 ClassNotFoundException）
+#    方式 A：IDEA 打开 server/，Project SDK 选 17，运行 ServerApplication
+#    方式 B：cd server && java -jar target/lnf-server-0.0.1-SNAPSHOT.jar（须用 JDK 17）
 
-# 4. 前端（待第 5 周初始化后补充）
-
-# 5. 匹配引擎（待第 6 周初始化后补充）
+# 4. 前端（端口 5173）
+cd web && pnpm install && pnpm dev
 ```
+
+演示账号：`admin` / `demo01`~`demo10`，密码统一 `Demo123456`（D 大写，区分大小写）。

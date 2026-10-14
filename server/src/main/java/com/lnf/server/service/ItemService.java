@@ -202,7 +202,7 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
     public List<String> claimQuestions(Long itemId) {
         Item item = getById(itemId);
         if (item == null) {
-            throw new BizException(4001, "信息不存在");
+            throw new BizException(2004, "信息不存在或已删除");
         }
         return itemFeatureMapper.selectList(new LambdaQueryWrapper<ItemFeature>()
                         .eq(ItemFeature::getItemId, itemId)

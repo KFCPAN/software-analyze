@@ -1,6 +1,6 @@
 # lnf-server · 校园失物招领智能匹配平台（后端）
 
-《软件系统分析与设计综合实践》课程项目后端工程。openapi 契约接口已全部实现：**M1 认证**、**M2 信息发布**、**M3 认领状态机**、**M4 站内消息**、**M5 智能匹配接入**、**M6 后台管理**（信息审核 / 封禁 / 争议仲裁 / 运营看板）、**M7 CLIP 图像匹配通道**（双通道打分）。
+《软件系统分析与设计综合实践》课程项目后端工程。openapi 契约接口已全部实现：**M1 认证**、**M2 信息发布**、**M3 认领状态机**、**M4 站内消息**（含批量已读/类型筛选）、**M5 智能匹配接入**、**M6 后台管理**（信息审核 / 封禁 / 争议仲裁 / 运营看板）、**M7 CLIP 图像匹配通道**（双通道打分）、**M8 信用流水查询**。共 29 个业务接口 + 2 个词表接口。
 
 ## M6 后台管理接口（仅 ADMIN / REVIEWER 角色，USER 返回 403）
 
@@ -43,7 +43,7 @@ body `{nickname, phone}`（均选填），返回更新后的用户信息（手�
   - 两路各自独立容错，matcher 不可用仅记 WARN 日志降级，**不阻塞发布**（待补算队列留 TODO）
 - 匹配计算：文本、图像两路 pgvector 余弦距离粗筛各取 Top20（反向类型 + OPEN + 先丢后捡时间约束），
   候选 id 取**并集**后批量取因子输入（text_score 在 SQL 算，image_vector 以文本带回 Java 算点积）→
-  多因子打分 → ≥ 0.55 写入 matches（唯一约束冲突忽略），命中后双方各收到一条 `MATCH_HIT` 站内信
+  多因子打分 → ≥ 阈值（yml `match.threshold`，当前 0.70，来自 82 对标注样本的阈值实验）写入 matches（唯一约束冲突忽略），命中后双方各收到一条 `MATCH_HIT` 站内信
 - **两套权重**（yml `match.weights.*` / `match.weights.with-image.*`）：
   - 双方都有图像向量：`totalScore = 0.5*text + 0.2*image + 0.15*time + 0.15*location`
   - 双方均无或仅单方有图：`totalScore = 0.6*text + 0.2*time + 0.2*location`，imageScore 记 NULL
@@ -68,9 +68,9 @@ server/
     │   ├── common/                       # Result / BizException / 全局异常处理 / AesUtil
     │   ├── config/                       # SecurityConfig（含 CORS）/ WebMvcConfig（/files 静态映射）/ MybatisPlusConfig（分页）
     │   ├── security/                     # JwtUtil / JwtAuthFilter / LoginUser
-    │   ├── entity/  mapper/  service/    # User / Item / ItemFeature / Category / Location / Claim
+    │   ├── entity/  mapper/  service/    # User / Item / ItemFeature / Category / Location / Claim / Match / Message / CreditLog / AuditLog
     │   ├── dto/                          # 请求/响应对象
-    │   └── controller/                   # Auth / User / Item / Category / Location / File
+    │   └── controller/                   # Auth / User / Item / Category / Location / File / Claim / Match / Message / Credit / Admin
     └── resources/application.yml         # 数据源 / MyBatis-Plus / JWT 配置
 ```
 
@@ -83,13 +83,18 @@ server/
 
 ## 启动
 
+> ⚠️ **不要用 `mvn spring-boot:run`**：项目路径含中文时，Maven 给 fork 子进程传 classpath 编码错乱，
+> 必现 `ClassNotFoundException: com.lnf.server.ServerApplication`（实测 fork=false、UTF-8 JVM 参数均无效）。
+
 ```bash
 cd server
-mvn spring-boot:run
-# 或先打包再运行
+# 方式 A（日常开发推荐）：IDEA 打开本模块，Project SDK 选 17，运行 ServerApplication
+# 方式 B（演示/联调）：先打包再运行（必须用 JDK 17 的 java）
 mvn package -DskipTests
-java -jar target/lnf-server-0.0.1-SNAPSHOT.jar
+D:\jdk-17\bin\java -jar target\lnf-server-0.0.1-SNAPSHOT.jar
 ```
+
+**启动目录必须是 `server/`**：`app.upload-dir` 是相对路径，在别的目录启动会导致 `/files/**` 图片解析到错误位置（表现为接口正常但图片返回 500 JSON）。
 
 服务监听 `http://localhost:8080`。前端 Vite 开发服务器（`http://localhost:5173`）已在 CORS 白名单中。
 
@@ -267,10 +272,10 @@ curl -X POST http://localhost:8080/api/claims/verify \
 
 ## M4 站内消息接口
 
-### 18. 消息列表 `GET /api/messages?unreadOnly=&page=&size=`（需 JWT）
+### 18. 消息列表 `GET /api/messages?unreadOnly=&type=&page=&size=`（需 JWT）
 
 ```bash
-curl "http://localhost:8080/api/messages?unreadOnly=true&page=1&size=10" -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:8080/api/messages?type=MATCH_HIT&page=1&size=10" -H "Authorization: Bearer $TOKEN"
 ```
 
 ```json
@@ -279,11 +284,33 @@ curl "http://localhost:8080/api/messages?unreadOnly=true&page=1&size=10" -H "Aut
 ```
 
 当前用户消息按 created_at 倒序分页；`unreadOnly=true` 只返回未读；
-`unreadCount` 为未读总数（不受 unreadOnly/分页影响，供前端小红点使用）。
+`type` 可选（`MATCH_HIT / CLAIM_PROGRESS / REVIEW_RESULT / SYSTEM`），服务端筛选；
+`unreadCount` 为未读总数（不受 unreadOnly/type/分页影响，供前端小红点使用）。
 
 ### 19. 标记已读 `POST /api/messages/{id}/read`（需 JWT）
 
 仅消息归属人本人可操作（他人返回 4002）；幂等——已是已读也返回成功。
+
+### 27. 全部标记已读 `POST /api/messages/read-all`（需 JWT，第 6 周新增）
+
+批量将当前用户所有未读消息置为已读，返回 `{"updated": 实际更新条数}`。
+前端「全部已读」按钮用此接口，不要循环调单条接口。
+
+## M8 信用体系接口（第 6 周新增）
+
+### 28. 我的信用分流水 `GET /api/credits/mine?page=&size=`（需 JWT）
+
+created_at 倒序分页，返回 `{total, page, size, list:[{id, delta, reason, claimId, createdAt}]}`；
+`delta` 正为加分、负为扣分（如认领完成 +2/+5、封禁 -20、仲裁驳回 -20）。
+当前信用总分由 `GET /api/users/me` 的 `creditScore` 字段提供。
+
+## M2 补充接口（第 6 周新增）
+
+### 29. 认领问题回显 `GET /api/items/{id}/claim-questions`（需 JWT）
+
+返回该信息的隐藏特征**问题**列表（字符串数组，如 `["卡内姓名"]`），供认领申请页逐题展示。
+**只返回 featureKey，答案密文任何情况都不出库**（防冒领底线）。
+信息不存在返回 2004。前端认领页应先调此接口拿真实问题，再收集答案提交 `POST /api/claims`。
 
 ## M5/M7 智能匹配接口
 
@@ -363,4 +390,4 @@ curl -X POST http://localhost:8080/api/matches/1/feedback \
 - `app.upload-dir`：图片上传目录（默认 `uploads`，已加入 .gitignore）
 - `app.aes-key`：隐藏特征答案 AES 密钥（16/24/32 字节），**生产环境务必用环境变量覆盖**
 
-> 注意：数据库中预置的 admin 账号 `password_hash` 为占位符（非 BCrypt 哈希），无法直接登录，需后续通过重置密码流程处理。
+> 演示账号：`admin` / `demo01`~`demo10`，密码统一 `Demo123456`（区分大小写）。
