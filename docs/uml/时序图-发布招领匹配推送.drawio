@@ -1,0 +1,36 @@
+<mxfile host="app.diagrams.net" agent="Doubao" version="21.1.0" type="device">
+<diagram id="s" name="发布招领→自动匹配→推送">
+<mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1210" pageHeight="746" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="a1" value="拾获者" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="-5" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a2" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a1" target="a1"><mxGeometry relative="1" as="geometry"/><mxPoint x="70" y="88" as="sourcePoint"/><mxPoint x="70" y="716" as="targetPoint"/></mxCell>
+<mxCell id="a3" value="前端Web" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="185" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a4" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a3" target="a3"><mxGeometry relative="1" as="geometry"/><mxPoint x="260" y="88" as="sourcePoint"/><mxPoint x="260" y="716" as="targetPoint"/></mxCell>
+<mxCell id="a5" value="后端服务" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="375" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a6" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a5" target="a5"><mxGeometry relative="1" as="geometry"/><mxPoint x="450" y="88" as="sourcePoint"/><mxPoint x="450" y="716" as="targetPoint"/></mxCell>
+<mxCell id="a7" value="匹配引擎" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="565" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a8" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a7" target="a7"><mxGeometry relative="1" as="geometry"/><mxPoint x="640" y="88" as="sourcePoint"/><mxPoint x="640" y="716" as="targetPoint"/></mxCell>
+<mxCell id="a9" value="数据库" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="755" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a10" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a9" target="a9"><mxGeometry relative="1" as="geometry"/><mxPoint x="830" y="88" as="sourcePoint"/><mxPoint x="830" y="716" as="targetPoint"/></mxCell>
+<mxCell id="a11" value="失主" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="945" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a12" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a11" target="a11"><mxGeometry relative="1" as="geometry"/><mxPoint x="1020" y="88" as="sourcePoint"/><mxPoint x="1020" y="716" as="targetPoint"/></mxCell>
+<mxCell id="a13" value="填写招领信息+照片" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="128" as="sourcePoint"/><mxPoint x="260" y="128" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a14" value="POST /api/items 发布" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="190" as="sourcePoint"/><mxPoint x="450" y="190" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a15" value="校验并入库（items / item
+_features 加密）" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="252" as="sourcePoint"/><mxPoint x="830" y="252" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a16" value="异步向量化 /embed/text 
+/embed/image" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="314" as="sourcePoint"/><mxPoint x="640" y="314" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a17" value="返回向量，写回 text_vecto
+r / image_vector" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="640" y="376" as="sourcePoint"/><mxPoint x="450" y="376" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a18" value="文本+图像粗筛Top20，多因子打分" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="438" as="sourcePoint"/><mxPoint x="640" y="438" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a19" value="score≥0.55 写入 matc
+hes" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="640" y="500" as="sourcePoint"/><mxPoint x="450" y="500" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a20" value="写 MATCH_HIT 站内信，推送
+疑似找到" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="562" as="sourcePoint"/><mxPoint x="1020" y="562" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a21" value="返回“发布成功，匹配进行中”" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="624" as="sourcePoint"/><mxPoint x="70" y="624" as="targetPoint"/></mxGeometry></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>
