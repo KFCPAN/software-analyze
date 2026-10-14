@@ -40,12 +40,16 @@ app:
 matcher:
   base-url: http://localhost:9000
 
-# 智能匹配：综合分 ≥ 阈值才写入 matches。两套权重：
+# 智能匹配：先过语义硬门槛（text ≥ min-text-score，或图像分 ≥ strong-image-score 的强图像证据可豁免），
+# 再过总分阈值（综合分 ≥ threshold 才写入 matches）。两套权重：
 # 默认（双方均无图或仅单方有图）：0.6*文本 + 0.2*时间 + 0.2*地点
 # 双方都有图像向量：0.5*文本 + 0.2*图像 + 0.15*时间 + 0.15*地点
-# 阈值 0.70 来自阈值实验（82 对人工标注）：召回 96.3%、误报 34.2%，详见 docs/research/匹配实验结果.md
+# 设计说明：时间+地点合计最高贡献 0.4 分，无语义门槛时"同校区近期发布的无关物品"会仅靠时空分压线误报
+# （实测：黑色钱包 匹配出 足球 text=0.457/time=0.95/loc=0.6 → 0.584 ≥ 0.55）。阈值实验见 docs/research/匹配实验结果.md
 match:
-  threshold: 0.70
+  threshold: 0.55
+  min-text-score: 0.50
+  strong-image-score: 0.85
   weights:
     text: 0.6
     time: 0.2

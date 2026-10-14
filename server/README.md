@@ -43,11 +43,11 @@ body `{nickname, phone}`（均选填），返回更新后的用户信息（手�
   - 两路各自独立容错，matcher 不可用仅记 WARN 日志降级，**不阻塞发布**（待补算队列留 TODO）
 - 匹配计算：文本、图像两路 pgvector 余弦距离粗筛各取 Top20（反向类型 + OPEN + 先丢后捡时间约束），
   候选 id 取**并集**后批量取因子输入（text_score 在 SQL 算，image_vector 以文本带回 Java 算点积）→
-  多因子打分 → ≥ 阈值（yml `match.threshold`，当前 0.70，来自 82 对标注样本的阈值实验）写入 matches（唯一约束冲突忽略），命中后双方各收到一条 `MATCH_HIT` 站内信
+  先过语义硬门槛（text ≥ `match.min-text-score` 0.50，或图像分 ≥ 0.85 豁免），再多因子打分 → ≥ 阈值（yml `match.threshold`，当前 0.55）写入 matches（唯一约束冲突忽略），命中后双方各收到一条 `MATCH_HIT` 站内信
 - **两套权重**（yml `match.weights.*` / `match.weights.with-image.*`）：
   - 双方都有图像向量：`totalScore = 0.5*text + 0.2*image + 0.15*time + 0.15*location`
   - 双方均无或仅单方有图：`totalScore = 0.6*text + 0.2*time + 0.2*location`，imageScore 记 NULL
-- 因子规则：timeScore = max(0.3, 1.0 - 0.1×天数)；locationScore = 同地点 1.0 / 同校区 0.6 / 跨校区 0.2 / 任一方为空 0.4
+- 因子规则：timeScore = max(0.5, 1.0 - 0.1×天数)；locationScore = 同地点 1.0 / 同校区 0.6 / 跨校区 0.2 / 任一方为空 0.4
 - M7 端到端实测：双方带同一张图配对 imageScore=1.0000、totalScore=0.9485；单方带图 imageScore=NULL、按无图像权重 totalScore=0.9347（23/23 断言通过）
 
 ## 技术栈
