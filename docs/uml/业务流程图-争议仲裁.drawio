@@ -1,0 +1,36 @@
+<mxfile host="app.diagrams.net" agent="Doubao" version="21.1.0" type="device">
+<diagram id="f" name="争议仲裁">
+<mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="984" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="n1" value="开始" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="300" y="20" width="120" height="44" as="geometry"/></mxCell>
+<mxCell id="n2" value="认领/核销过程中产生争议" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="280" y="90" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n3" value="任一方提交争议申诉" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="200" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n4" value="状态→DISPUTED
+(争议仲裁中)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="300" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n5" value="审核员/管理员查看
+双方证据与记录" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="400" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n6" value="仲裁判定" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=11;" vertex="1" parent="1"><mxGeometry x="340" y="500" width="240" height="90" as="geometry"/></mxCell>
+<mxCell id="n7" value="支持失主
+认领通过并生成核销码" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="600" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n8" value="支持拾获者/证据不足
+驳回并记录" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="620" y="600" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n9" value="记录审计日志(AuditLog)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="320" y="700" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n10" value="调整信用分" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1"><mxGeometry x="340" y="800" width="300" height="64" as="geometry"/></mxCell>
+<mxCell id="n11" value="结束" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="360" y="900" width="120" height="44" as="geometry"/></mxCell>
+<mxCell id="n12" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n1" target="n2"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n13" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n2" target="n3"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n14" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n3" target="n4"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n15" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n4" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n16" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n5" target="n6"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n17" value="支持失主" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n6" target="n7"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n18" value="支持对方/证据不足" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n6" target="n8"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n19" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n7" target="n9"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n20" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n8" target="n9"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n21" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n9" target="n10"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n22" value="" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1" source="n10" target="n11"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>
