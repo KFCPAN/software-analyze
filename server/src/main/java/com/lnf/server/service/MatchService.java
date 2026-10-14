@@ -319,7 +319,7 @@ public class MatchService extends ServiceImpl<MatchMapper, Match> {
      */
     private double locationScore(Long locationA, Long locationB, Map<Long, String> campusMap) {
         if (locationA == null || locationB == null) {
-            return 0.4;
+            return 0.3; // 信息缺失给中立偏低分：不该高于"已知跨校区"的 0.2 太多，否则不填地点反而占便宜
         }
         if (locationA.equals(locationB)) {
             return 1.0;
