@@ -31,8 +31,10 @@ jwt:
   expire: 86400000
 
 app:
-  # 图片上传目录（相对应用工作目录），/files/** 映射到该目录
-  upload-dir: uploads
+  # 图片上传目录，/files/** 映射到该目录。
+  # 用绝对路径：后端无论从哪个目录启动（IDEA 工作目录在仓库根、java -jar 在任意目录）都能正确找到图片，
+  # 相对路径在启动目录不是 server/ 时会导致图片全部 500。
+  upload-dir: C:/Users/heweiming/Desktop/软件实践/lost-and-found/server/uploads
   # AES 密钥（16/24/32 字节），用于隐藏特征答案加密。生产环境请通过环境变量覆盖。
   aes-key: LnfAesKey2026!!!
 
