@@ -18,6 +18,8 @@ public class ItemDetailVO {
     private String categoryName;
     private Long locationId;
     private String locationName;
+    /** 用户手填的自定义地点（locationId 为空时 locationName 展示它） */
+    private String customLocation;
     /** yyyy-MM-dd HH:mm:ss */
     private String eventTime;
     private String description;

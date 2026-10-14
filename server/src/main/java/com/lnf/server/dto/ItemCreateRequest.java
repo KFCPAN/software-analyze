@@ -29,6 +29,10 @@ public class ItemCreateRequest {
     /** 记不清可不传 */
     private Long locationId;
 
+    /** 词表没有的地点可手填（如"文华楼东区12层自习区"），最长 100 字 */
+    @Size(max = 100, message = "自定义地点最长 100 字")
+    private String customLocation;
+
     /** 丢失/拾获时间，格式 yyyy-MM-dd HH:mm:ss */
     @NotBlank(message = "发生时间不能为空")
     private String eventTime;

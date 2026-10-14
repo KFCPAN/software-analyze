@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS items (
     title        VARCHAR(100) NOT NULL,
     category_id  BIGINT       NOT NULL REFERENCES categories(id),
     location_id  BIGINT       REFERENCES locations(id),   -- 允许为空（"记不清楚了"场景）
+    custom_location VARCHAR(100),                         -- 词表没有时用户手填的地点
     event_time   TIMESTAMPTZ  NOT NULL,                   -- 丢失/拾获发生时间
     description  TEXT         NOT NULL,                   -- 口语化描述
     images       JSONB        NOT NULL DEFAULT '[]',      -- 图片文件路径数组
@@ -201,7 +202,13 @@ ON CONFLICT DO NOTHING;
 INSERT INTO locations (parent_id, name, campus, level) VALUES
     (1,'文华楼','海淀',2),(1,'日新楼','海淀',2),(1,'图书馆','海淀',2),
     (1,'清真食堂','海淀',2),(1,'荟贤楼','海淀',2),(1,'操场','海淀',2),
+    (1,'理工楼','海淀',2),(1,'北智楼','海淀',2),(1,'中慧楼','海淀',2),(1,'南睿楼','海淀',2),
+    (1,'大礼堂','海淀',2),(1,'逸夫体育馆','海淀',2),(1,'民族博物馆','海淀',2),(1,'校医院','海淀',2),
+    (1,'学生宿舍1-4号楼','海淀',2),(1,'学生宿舍5-8号楼','海淀',2),
     (2,'明德楼','丰台',2),(2,'共美厅','丰台',2),(2,'食堂','丰台',2),(2,'操场','丰台',2),
+    (2,'日新楼','丰台',2),(2,'博文楼','丰台',2),(2,'图书馆','丰台',2),(2,'综合楼','丰台',2),
+    (2,'聚雅餐厅','丰台',2),(2,'荟贤餐厅','丰台',2),(2,'学生活动中心','丰台',2),
+    (2,'田径场','丰台',2),(2,'校医院','丰台',2),(2,'学生宿舍区','丰台',2),
     (3,'丰台-海淀班车','跨校区',2),(3,'海淀-丰台班车','跨校区',2)
 ON CONFLICT DO NOTHING;
 
