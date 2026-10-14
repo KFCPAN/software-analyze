@@ -1,0 +1,38 @@
+<mxfile host="app.diagrams.net" agent="Doubao" version="21.1.0" type="device">
+<diagram id="s" name="认领申请→特征核验→扫码核销">
+<mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1020" pageHeight="870" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="a1" value="失主" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="-5" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a2" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a1" target="a1"><mxGeometry relative="1" as="geometry"/><mxPoint x="70" y="88" as="sourcePoint"/><mxPoint x="70" y="840" as="targetPoint"/></mxCell>
+<mxCell id="a3" value="前端Web" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="185" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a4" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a3" target="a3"><mxGeometry relative="1" as="geometry"/><mxPoint x="260" y="88" as="sourcePoint"/><mxPoint x="260" y="840" as="targetPoint"/></mxCell>
+<mxCell id="a5" value="后端服务" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="375" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a6" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a5" target="a5"><mxGeometry relative="1" as="geometry"/><mxPoint x="450" y="88" as="sourcePoint"/><mxPoint x="450" y="840" as="targetPoint"/></mxCell>
+<mxCell id="a7" value="数据库" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="565" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a8" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a7" target="a7"><mxGeometry relative="1" as="geometry"/><mxPoint x="640" y="88" as="sourcePoint"/><mxPoint x="640" y="840" as="targetPoint"/></mxCell>
+<mxCell id="a9" value="拾获者" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="755" y="40" width="150" height="48" as="geometry"/></mxCell>
+<mxCell id="a10" style="dashed=1;html=1;endArrow=none;strokeColor=#999999;" edge="1" parent="1" source="a9" target="a9"><mxGeometry relative="1" as="geometry"/><mxPoint x="830" y="88" as="sourcePoint"/><mxPoint x="830" y="840" as="targetPoint"/></mxCell>
+<mxCell id="a11" value="POST /api/claims 认
+领申请（特征作答）" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="128" as="sourcePoint"/><mxPoint x="450" y="128" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a12" value="解密比对存 feature_answ
+ers，items→CLAIMING" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="190" as="sourcePoint"/><mxPoint x="640" y="190" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a13" value="站内信通知：待你核验" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="252" as="sourcePoint"/><mxPoint x="830" y="252" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a14" value="POST /api/claims/{
+id}/review (APPROV
+E)" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="314" as="sourcePoint"/><mxPoint x="450" y="314" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a15" value="生成核销码 LNF-xxx，7天有效" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="376" as="sourcePoint"/><mxPoint x="640" y="376" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a16" value="站内信通知：核验通过" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="438" as="sourcePoint"/><mxPoint x="70" y="438" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a17" value="GET /api/claims/{i
+d}/code 获取核销码" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="500" as="sourcePoint"/><mxPoint x="450" y="500" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a18" value="POST /api/claims/v
+erify 扫码核销" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="562" as="sourcePoint"/><mxPoint x="450" y="562" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a19" value="claims→COMPLETED，i
+tems→CLOSED，信用分更新" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="624" as="sourcePoint"/><mxPoint x="640" y="624" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a20" value="通知双方：交接完成" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="686" as="sourcePoint"/><mxPoint x="70" y="686" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="a21" value="通知双方：交接完成" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="748" as="sourcePoint"/><mxPoint x="830" y="748" as="targetPoint"/></mxGeometry></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>
