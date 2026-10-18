@@ -1,0 +1,29 @@
+<mxfile host="app.diagrams.net" agent="Doubao" version="21.1.0" type="device">
+<diagram id="图2-4 智能匹配用例图" name="图2-4 智能匹配用例图">
+<mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1122" pageHeight="426" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="n1" value="失主" style="shape=actor;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontSize=12;fillColor=#FFFFFF;" vertex="1" parent="1"><mxGeometry x="40" y="92" width="120" height="60" as="geometry"/></mxCell>
+<mxCell id="n2" value="拾获者" style="shape=actor;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontSize=12;fillColor=#FFFFFF;" vertex="1" parent="1"><mxGeometry x="40" y="195" width="120" height="60" as="geometry"/></mxCell>
+<mxCell id="n3" value="系统管理员" style="shape=actor;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontSize=12;fillColor=#FFFFFF;" vertex="1" parent="1"><mxGeometry x="40" y="298" width="120" height="60" as="geometry"/></mxCell>
+<mxCell id="n4" value="图2-4 智能匹配用例图" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;strokeColor=#000000;verticalAlign=top;align=center;fontSize=14;fontStyle=1;fillColor=none;" vertex="1" parent="1"><mxGeometry x="220" y="70" width="842" height="310" as="geometry"/></mxCell>
+<mxCell id="n5" value="自动匹配与候选推送" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FFFFFF;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="240" y="126" width="250" height="62" as="geometry"/></mxCell>
+<mxCell id="n6" value="确认 / 否定匹配反馈" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FFFFFF;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="536" y="126" width="250" height="62" as="geometry"/></mxCell>
+<mxCell id="n7" value="候选匹配结果查询" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FFFFFF;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="832" y="126" width="250" height="62" as="geometry"/></mxCell>
+<mxCell id="n8" value="匹配参数与阈值配置" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FFFFFF;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="240" y="222" width="250" height="62" as="geometry"/></mxCell>
+<mxCell id="n9" value="文本语义匹配（BGE）" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FFFFFF;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="536" y="222" width="250" height="62" as="geometry"/></mxCell>
+<mxCell id="n10" value="图像相似度匹配（CLIP）" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FFFFFF;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="832" y="222" width="250" height="62" as="geometry"/></mxCell>
+<mxCell id="n11" value="综合打分与阈值过滤" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FFFFFF;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="240" y="318" width="250" height="62" as="geometry"/></mxCell>
+<mxCell id="n12" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="n1" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n13" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="n2" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n14" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="n1" target="n6"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n15" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="n1" target="n7"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n16" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="n3" target="n8"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n17" value="&lt;&lt;include&gt;&gt;" style="dashed=1;html=1;endArrow=open;fontSize=10;strokeColor=#000000;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="n5" target="n9"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n18" value="&lt;&lt;include&gt;&gt;" style="dashed=1;html=1;endArrow=open;fontSize=10;strokeColor=#000000;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="n5" target="n10"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n19" value="&lt;&lt;include&gt;&gt;" style="dashed=1;html=1;endArrow=open;fontSize=10;strokeColor=#000000;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="n5" target="n11"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>

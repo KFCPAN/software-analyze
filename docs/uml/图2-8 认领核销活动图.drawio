@@ -1,0 +1,46 @@
+<mxfile host="app.diagrams.net" agent="Doubao" version="21.1.0" type="device">
+<diagram id="d" name="图2-8 认领核销活动图">
+<mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="655" pageHeight="1084" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="n1" value="开始" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=12;" vertex="1" parent="1"><mxGeometry x="180" y="30" width="110" height="44" as="geometry"/></mxCell>
+<mxCell id="n2" value="失主提交认领申请
+（隐藏特征作答）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="115" y="120" width="240" height="50" as="geometry"/></mxCell>
+<mxCell id="n3" value="拾获者核验特征" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="120" y="215" width="230" height="50" as="geometry"/></mxCell>
+<mxCell id="n4" value="核验结果？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#B59F3B;fontSize=10;" vertex="1" parent="1"><mxGeometry x="150" y="310" width="160" height="88" as="geometry"/></mxCell>
+<mxCell id="n5" value="生成一次性核销码
++ 公开联系方式" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="300" width="185" height="50" as="geometry"/></mxCell>
+<mxCell id="n6" value="记录疑似冒领
+扣减信用分" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="400" width="185" height="50" as="geometry"/></mxCell>
+<mxCell id="n7" value="移交管理员仲裁" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="500" width="185" height="50" as="geometry"/></mxCell>
+<mxCell id="n8" value="仲裁结果？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#B59F3B;fontSize=10;" vertex="1" parent="1"><mxGeometry x="445" y="600" width="160" height="88" as="geometry"/></mxCell>
+<mxCell id="n9" value="线下交接" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="125" y="445" width="220" height="50" as="geometry"/></mxCell>
+<mxCell id="n10" value="扫码核销" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="125" y="540" width="220" height="50" as="geometry"/></mxCell>
+<mxCell id="n11" value="核销成功？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#B59F3B;fontSize=10;" vertex="1" parent="1"><mxGeometry x="150" y="640" width="160" height="88" as="geometry"/></mxCell>
+<mxCell id="n12" value="双方互评 · 信用分增加" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="120" y="775" width="230" height="50" as="geometry"/></mxCell>
+<mxCell id="n13" value="招领信息标记已完成" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="120" y="870" width="230" height="50" as="geometry"/></mxCell>
+<mxCell id="n14" value="超时提醒 · 重新开放认领" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="775" width="185" height="50" as="geometry"/></mxCell>
+<mxCell id="n15" value="结束" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=12;" vertex="1" parent="1"><mxGeometry x="180" y="1000" width="110" height="44" as="geometry"/></mxCell>
+<mxCell id="n16" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n1" target="n2"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n17" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n2" target="n3"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n18" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n3" target="n4"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n19" value="通过" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n4" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n20" value="驳回" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n4" target="n6"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n21" value="争议" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n4" target="n7"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n22" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n6" target="n15"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n23" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n7" target="n8"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n24" value="通过" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n8" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n25" value="驳回" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n8" target="n6"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n26" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n5" target="n9"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n27" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n9" target="n10"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n28" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n10" target="n11"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n29" value="是" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n11" target="n12"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n30" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n12" target="n13"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n31" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n13" target="n15"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n32" value="否" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n11" target="n14"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="n33" value="" style="html=1;endArrow=block;rounded=0;fontSize=9;" edge="1" parent="1" source="n14" target="n15"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>
