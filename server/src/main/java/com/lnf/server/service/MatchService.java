@@ -56,6 +56,8 @@ public class MatchService extends ServiceImpl<MatchMapper, Match> {
     private final double weightImgTime;
     private final double weightImgLocation;
     private final double threshold;
+    private final double minTextScore;
+    private final double strongImageScore;
     private final String uploadDir;
 
     public MatchService(ItemMapper itemMapper,
@@ -70,6 +72,8 @@ public class MatchService extends ServiceImpl<MatchMapper, Match> {
                         @Value("${match.weights.with-image.time}") double weightImgTime,
                         @Value("${match.weights.with-image.location}") double weightImgLocation,
                         @Value("${match.threshold}") double threshold,
+                        @Value("${match.min-text-score:0.50}") double minTextScore,
+                        @Value("${match.strong-image-score:0.85}") double strongImageScore,
                         @Value("${app.upload-dir:uploads}") String uploadDir) {
         this.itemMapper = itemMapper;
         this.locationMapper = locationMapper;
@@ -83,6 +87,8 @@ public class MatchService extends ServiceImpl<MatchMapper, Match> {
         this.weightImgTime = weightImgTime;
         this.weightImgLocation = weightImgLocation;
         this.threshold = threshold;
+        this.minTextScore = minTextScore;
+        this.strongImageScore = strongImageScore;
         this.uploadDir = uploadDir;
     }
 
@@ -182,6 +188,12 @@ public class MatchService extends ServiceImpl<MatchMapper, Match> {
 
             double timeScore = timeScore(item.getEventTime(), candidateEventTime);
             double locationScore = locationScore(item.getLocationId(), candidateLocationId, campusMap);
+            // 语义硬门槛：文本分过低且没有强图像证据的候选直接淘汰。
+            // 否则时间+地点权重最高可贡献 0.4 分，会把"同校区近期发布的无关物品"（如足球/折扇）推过总分阈值
+            boolean strongImageEvidence = imageScore != null && imageScore >= strongImageScore;
+            if (textScore < minTextScore && !strongImageEvidence) {
+                continue;
+            }
             double totalScore = imageScore != null
                     ? weightImgText * textScore + weightImgImage * imageScore
                             + weightImgTime * timeScore + weightImgLocation * locationScore
@@ -293,11 +305,13 @@ public class MatchService extends ServiceImpl<MatchMapper, Match> {
     // ------------------------------------------------------------------
 
     /**
-     * 时间接近度：0 天内 1.0，每天 -0.1，最低 0.3（7 天后保持 0.3）
+     * 时间接近度：0 天内 1.0，每天 -0.1，最低 0.5（5 天后保持 0.5）。
+     * 地板从 0.3 抬到 0.5：失物招领场景时间跨度本来就大（丢了一周才登记很常见），
+     * 0.3 会让"跨了一周的真钱包"被"同校区昨天的足球"反超。
      */
     private double timeScore(OffsetDateTime a, OffsetDateTime b) {
         double days = Math.abs(Duration.between(a, b).toHours()) / 24.0;
-        return Math.max(0.3, 1.0 - 0.1 * days);
+        return Math.max(0.5, 1.0 - 0.1 * days);
     }
 
     /**
@@ -305,7 +319,7 @@ public class MatchService extends ServiceImpl<MatchMapper, Match> {
      */
     private double locationScore(Long locationA, Long locationB, Map<Long, String> campusMap) {
         if (locationA == null || locationB == null) {
-            return 0.4;
+            return 0.3; // 信息缺失给中立偏低分：不该高于"已知跨校区"的 0.2 太多，否则不填地点反而占便宜
         }
         if (locationA.equals(locationB)) {
             return 1.0;

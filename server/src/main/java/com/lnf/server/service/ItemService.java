@@ -132,7 +132,10 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
         vo.setCategoryId(item.getCategoryId());
         vo.setCategoryName(categoryNameMap().get(item.getCategoryId()));
         vo.setLocationId(item.getLocationId());
-        vo.setLocationName(item.getLocationId() == null ? null : locationNameMap().get(item.getLocationId()));
+        vo.setLocationName(item.getLocationId() != null
+                ? locationNameMap().get(item.getLocationId())
+                : item.getCustomLocation());
+        vo.setCustomLocation(item.getCustomLocation());
         vo.setEventTime(format(item.getEventTime()));
         vo.setDescription(item.getDescription());
         vo.setImages(item.getImages() == null ? List.of() : item.getImages());
@@ -202,7 +205,7 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
     public List<String> claimQuestions(Long itemId) {
         Item item = getById(itemId);
         if (item == null) {
-            throw new BizException(4001, "信息不存在");
+            throw new BizException(2004, "信息不存在或已删除");
         }
         return itemFeatureMapper.selectList(new LambdaQueryWrapper<ItemFeature>()
                         .eq(ItemFeature::getItemId, itemId)
@@ -264,6 +267,8 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
         item.setTitle(request.getTitle());
         item.setCategoryId(request.getCategoryId());
         item.setLocationId(request.getLocationId());
+        item.setCustomLocation(StringUtils.hasText(request.getCustomLocation())
+                ? request.getCustomLocation().trim() : null);
         item.setEventTime(parseEventTime(request.getEventTime()));
         item.setDescription(request.getDescription());
         item.setImages(request.getImages() == null ? List.of() : request.getImages());
@@ -320,7 +325,9 @@ public class ItemService extends ServiceImpl<ItemMapper, Item> {
         vo.setTitle(item.getTitle());
         vo.setCategoryId(item.getCategoryId());
         vo.setCategoryName(categoryNames.get(item.getCategoryId()));
-        vo.setLocationName(item.getLocationId() == null ? null : locationNames.get(item.getLocationId()));
+        vo.setLocationName(item.getLocationId() != null
+                ? locationNames.get(item.getLocationId())
+                : item.getCustomLocation());
         vo.setEventTime(format(item.getEventTime()));
         vo.setCoverImage(CollectionUtils.isEmpty(item.getImages()) ? null : item.getImages().get(0));
         vo.setStatus(item.getStatus());

@@ -33,6 +33,9 @@ public class Item {
 
     private Long locationId;
 
+    /** 自定义地点（词表没有时用户手填，与 locationId 二选一或互补） */
+    private String customLocation;
+
     /** 丢失/拾获发生时间 */
     private OffsetDateTime eventTime;
 
