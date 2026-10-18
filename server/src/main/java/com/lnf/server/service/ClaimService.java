@@ -146,7 +146,7 @@ public class ClaimService extends ServiceImpl<ClaimMapper, Claim> {
     }
 
     /**
-     * 待我核验的认领单（我是拾获者，仅 PENDING）
+     * 待我处理的认领单（我是拾获者）：PENDING 待核验 + APPROVED 待线下核销交接
      */
     public List<ClaimTodoVO> todo(Long userId) {
         List<Long> myFoundItemIds = itemMapper.selectList(new LambdaQueryWrapper<Item>()
@@ -157,7 +157,7 @@ public class ClaimService extends ServiceImpl<ClaimMapper, Claim> {
         }
         List<Claim> claims = list(new LambdaQueryWrapper<Claim>()
                 .in(Claim::getFoundItemId, myFoundItemIds)
-                .eq(Claim::getStatus, "PENDING")
+                .in(Claim::getStatus, List.of("PENDING", "APPROVED"))
                 .orderByDesc(Claim::getCreatedAt));
         Map<Long, String> itemTitles = itemTitleMap(myFoundItemIds);
         return claims.stream().map(c -> {

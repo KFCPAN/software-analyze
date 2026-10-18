@@ -183,6 +183,13 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 COMMENT ON TABLE audit_logs IS '后台操作审计：审核、封禁、仲裁全程留痕';
 
+CREATE TABLE IF NOT EXISTS system_configs (
+    config_key   VARCHAR(64) PRIMARY KEY,
+    config_value TEXT NOT NULL,
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE system_configs IS '系统参数配置（key-value）：后台"系统设置"页持久化，如 match.w1 / match.threshold';
+
 -- =====================================================================
 -- 初始化数据
 -- =====================================================================

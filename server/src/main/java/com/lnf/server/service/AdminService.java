@@ -3,8 +3,11 @@ package com.lnf.server.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lnf.server.common.BizException;
+import com.lnf.server.dto.AdminAuditItemVO;
 import com.lnf.server.dto.AdminClaimVO;
 import com.lnf.server.dto.AdminItemVO;
+import com.lnf.server.dto.AdminUserVO;
+import com.lnf.server.dto.DashboardStatsVO;
 import com.lnf.server.dto.PageResult;
 import com.lnf.server.dto.StatsOverviewVO;
 import com.lnf.server.entity.Category;
@@ -200,6 +203,137 @@ public class AdminService {
                         (String) row.get("location_name"), ((Number) row.get("cnt")).longValue()))
                 .toList());
         return vo;
+    }
+
+    /**
+     * 管理后台数据看板（前端 dashboard.vue 契约：stats 四指标 + locations 地点分布）
+     */
+    public DashboardStatsVO dashboardStats() {
+        StatsOverviewVO overview = statsOverview();
+        DashboardStatsVO vo = new DashboardStatsVO();
+        DashboardStatsVO.DashboardStat stat = new DashboardStatsVO.DashboardStat();
+        stat.setTotalPosts(overview.getTotalItems());
+        stat.setResolvedCount(overview.getCompletedClaims());
+        stat.setMatchRate(Math.round(overview.getMatchHitRate() * 100));
+        stat.setAvgTime(overview.getAvgRecoverHours());
+        vo.setStats(stat);
+        vo.setLocations(overview.getHotLocations().stream()
+                .map(h -> new DashboardStatsVO.LocationCount(h.getLocationName(), h.getCount()))
+                .toList());
+        return vo;
+    }
+
+    /**
+     * 内容审核列表（默认查 OPEN 状态，扁平字段 + 风险等级启发式标注）
+     */
+    public PageResult<AdminAuditItemVO> pageAuditItems(String status, String keyword, long page, long size) {
+        if (page < 1 || size < 1 || size > 100) {
+            throw new BizException(400, "分页参数不合法（page≥1，1≤size≤100）");
+        }
+        String effectiveStatus = StringUtils.hasText(status) ? status : "OPEN";
+        Page<Item> result = new Page<>(page, size);
+        itemMapper.selectPage(result, new LambdaQueryWrapper<Item>()
+                .eq(Item::getStatus, effectiveStatus)
+                .and(StringUtils.hasText(keyword), w -> w
+                        .like(Item::getTitle, keyword).or().like(Item::getDescription, keyword))
+                .orderByDesc(Item::getCreatedAt));
+
+        List<AdminAuditItemVO> list = result.getRecords().stream().map(item -> {
+            AdminAuditItemVO vo = new AdminAuditItemVO();
+            vo.setId(item.getId());
+            vo.setType(item.getType() == null ? null : item.getType().toLowerCase());
+            vo.setTitle(item.getTitle());
+            vo.setCreateTime(format(item.getCreatedAt()));
+            vo.setDescription(item.getDescription());
+            User publisher = userMapper.selectById(item.getUserId());
+            vo.setPublisher(publisher == null ? null : publisher.getUsername());
+            Risk risk = assessRisk(item.getTitle(), item.getDescription());
+            vo.setRiskLevel(risk.level);
+            vo.setRiskReason(risk.reason);
+            return vo;
+        }).toList();
+        return new PageResult<>(result.getTotal(), result.getCurrent(), result.getSize(), list);
+    }
+
+    /**
+     * 内容审核：通过 = 恢复/保持 OPEN；驳回 = 下架（ARCHIVED）并通知发布者。写审计日志。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void reviewItem(Long adminId, Long itemId, boolean approve, String reason) {
+        Item item = itemMapper.selectById(itemId);
+        if (item == null) {
+            throw new BizException(6002, "信息不存在");
+        }
+        if (approve) {
+            if (!"OPEN".equals(item.getStatus())) {
+                item.setStatus("OPEN");
+                item.setUpdatedAt(OffsetDateTime.now());
+                itemMapper.updateById(item);
+            }
+            messageService.send(item.getUserId(), "SYSTEM", "发布信息已通过审核",
+                    "您发布的信息「" + item.getTitle() + "」已通过管理员审核。", null);
+        } else {
+            if (!StringUtils.hasText(reason)) {
+                throw new BizException(400, "驳回必须填写原因");
+            }
+            if (!"ARCHIVED".equals(item.getStatus())) {
+                item.setStatus("ARCHIVED");
+                item.setUpdatedAt(OffsetDateTime.now());
+                itemMapper.updateById(item);
+            }
+            messageService.send(item.getUserId(), "SYSTEM", "发布信息被驳回",
+                    "您发布的信息「" + item.getTitle() + "」被驳回，原因：" + reason + "。", null);
+        }
+        auditLogService.record(adminId, approve ? "AUDIT_APPROVE" : "AUDIT_REJECT", "ITEM", itemId,
+                "{\"reason\":\"" + (reason == null ? "" : reason.replace("\"", "'")) + "\"}");
+    }
+
+    /**
+     * 后台用户列表（扁平字段，status 映射为 banned / normal）
+     */
+    public PageResult<AdminUserVO> pageUsers(String keyword, long page, long size) {
+        if (page < 1 || size < 1 || size > 100) {
+            throw new BizException(400, "分页参数不合法（page≥1，1≤size≤100）");
+        }
+        Page<User> result = new Page<>(page, size);
+        userMapper.selectPage(result, new LambdaQueryWrapper<User>()
+                .and(StringUtils.hasText(keyword), w -> w
+                        .like(User::getUsername, keyword).or().like(User::getEmail, keyword))
+                .orderByAsc(User::getId));
+
+        List<AdminUserVO> list = result.getRecords().stream().map(user -> {
+            AdminUserVO vo = new AdminUserVO();
+            vo.setId(user.getId());
+            vo.setUsername(user.getUsername());
+            vo.setEmail(user.getEmail());
+            vo.setCredit(user.getCreditScore());
+            vo.setStatus("BANNED".equals(user.getStatus()) ? "banned" : "normal");
+            vo.setRegisterTime(user.getCreatedAt() == null ? null
+                    : user.getCreatedAt().atZoneSameInstant(CAMPUS_ZONE).toLocalDate().toString());
+            return vo;
+        }).toList();
+        return new PageResult<>(result.getTotal(), result.getCurrent(), result.getSize(), list);
+    }
+
+    private static final String[] HIGH_RISK_KEYWORDS = {"身份证", "人脸", "银行卡", "护照", "驾照"};
+    private static final String[] MEDIUM_RISK_KEYWORDS = {"学生证", "手机", "钱包", "电话", "联系方式"};
+
+    private Risk assessRisk(String title, String description) {
+        String text = (title == null ? "" : title) + " " + (description == null ? "" : description);
+        for (String kw : HIGH_RISK_KEYWORDS) {
+            if (text.contains(kw)) {
+                return new Risk("high", "包含「" + kw + "」等证件/生物特征类敏感信息，需人工复核");
+            }
+        }
+        for (String kw : MEDIUM_RISK_KEYWORDS) {
+            if (text.contains(kw)) {
+                return new Risk("medium", "包含「" + kw + "」等易冒领/涉联系方式信息");
+            }
+        }
+        return new Risk("low", "无");
+    }
+
+    private record Risk(String level, String reason) {
     }
 
     private AdminClaimVO.Party toParty(Long userId) {

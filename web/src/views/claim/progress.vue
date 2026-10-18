@@ -38,7 +38,7 @@
             <el-card v-for="item in verifyList" :key="item.id" class="list-item" shadow="never">
               <div class="item-header">
                 <span class="item-title">{{ item.itemTitle }}</span>
-                <el-tag type="warning" size="small">{{ statusText[item.status] || '待核验' }}</el-tag>
+                <el-tag type="warning" size="small">{{ item.status === 'APPROVED' ? '待交接' : (statusText[item.status] || '待核验') }}</el-tag>
               </div>
               <div class="verify-detail">
                 <p><strong>申请人：</strong>{{ item.claimant?.nickname || '未知' }}（信用分 {{ item.claimant?.creditScore ?? '-' }}）</p>
@@ -54,6 +54,9 @@
                   <el-button type="success" size="small" @click="verifyClaim(item, true)">通过</el-button>
                   <el-button type="danger" size="small" @click="verifyClaim(item, false)">拒绝</el-button>
                 </template>
+                <template v-else-if="item.status === 'APPROVED'">
+                  <el-button type="primary" size="small" @click="openConfirm(item)">完成交接（输入核销码）</el-button>
+                </template>
               </div>
             </el-card>
           </div>
@@ -68,6 +71,24 @@
           <p class="qr-tip">请向拾获者出示此二维码/核销码，对方扫码核销后完成交接（{{ expiresAt ? '有效期至 ' + formatTime(expiresAt) : '一次性有效' }}）</p>
         </div>
       </el-dialog>
+
+      <!-- 拾获者输入核销码完成交接 -->
+      <el-dialog v-model="confirmVisible" title="线下交接：输入核销码" width="380px">
+        <div v-if="confirmItem">
+          <p class="confirm-tip">请向认领人索取核销码，输入并确认后完成交接（{{ confirmItem.itemTitle }}）</p>
+          <el-input
+            v-model="confirmCode"
+            placeholder="如 LNF-2F0B3YIN"
+            clearable
+            size="large"
+            @keyup.enter="doConfirm"
+          />
+        </div>
+        <template #footer>
+          <el-button @click="confirmVisible = false">取消</el-button>
+          <el-button type="primary" :loading="confirming" @click="doConfirm">确认核销</el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -77,7 +98,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import QrcodeVue from 'qrcode.vue'
-import { getClaimProgress, verifyClaim as apiVerify, getClaimCode } from '@/api/claim'
+import { getClaimProgress, verifyClaim as apiVerify, getClaimCode, confirmClaim as apiConfirm } from '@/api/claim'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -92,6 +113,11 @@ const qrVisible = ref(false)
 const currentItem = ref(null)
 const verifyCode = ref('')
 const expiresAt = ref('')
+
+const confirmVisible = ref(false)
+const confirmItem = ref(null)
+const confirmCode = ref('')
+const confirming = ref(false)
 
 const statusText = {
   PENDING: '待核验',
@@ -163,6 +189,31 @@ async function verifyClaim(item, pass) {
     loadMine()
   } catch (e) {
     // 失败由拦截器提示
+  }
+}
+
+function openConfirm(item) {
+  confirmItem.value = item
+  confirmCode.value = ''
+  confirmVisible.value = true
+}
+
+async function doConfirm() {
+  const code = confirmCode.value.trim()
+  if (!code) {
+    ElMessage.warning('请输入核销码')
+    return
+  }
+  confirming.value = true
+  try {
+    await apiConfirm(code)
+    ElMessage.success('核销成功，交接完成')
+    confirmVisible.value = false
+    loadVerify()
+  } catch (e) {
+    // 错误（核销码无效/过期/无权）由拦截器提示
+  } finally {
+    confirming.value = false
   }
 }
 
@@ -253,6 +304,13 @@ function formatTime(t) {
   margin-top: 8px;
   font-size: 12px;
   color: #909399;
+  line-height: 1.6;
+}
+
+.confirm-tip {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 12px;
   line-height: 1.6;
 }
 </style>

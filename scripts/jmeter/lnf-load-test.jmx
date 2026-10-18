@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+<hashTree>
+<TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="校园失物招领平台-核心接口压测" enabled="true">
+  <stringProp name="TestPlan.comments">发布 / 匹配候选 / 分页列表 三接口</stringProp>
+  <boolProp name="TestPlan.functional_mode">false</boolProp>
+  <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+  <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
+</TestPlan>
+<hashTree>
+<ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="分页列表 GET /api/items" enabled="true">
+  <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+  <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="循环控制器" enabled="true">
+    <boolProp name="LoopController.continue_forever">false</boolProp>
+    <stringProp name="LoopController.loops">40</stringProp>
+  </elementProp>
+  <stringProp name="ThreadGroup.num_threads">50</stringProp>
+  <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+  <boolProp name="ThreadGroup.scheduler">false</boolProp>
+  <stringProp name="ThreadGroup.duration"></stringProp>
+  <stringProp name="ThreadGroup.delay"></stringProp>
+  <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+</ThreadGroup>
+<hashTree>
+<HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+  <collectionProp name="HeaderManager.headers">
+      <elementProp name="Authorization" elementType="Header">
+        <stringProp name="Header.name">Authorization</stringProp>
+        <stringProp name="Header.value">Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MyIsInVzZXJuYW1lIjoiZGVtbzAxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3OTE5ODI1NjIsImV4cCI6MTc5MjA2ODk2Mn0.TDfPXH74HWnsOS7kymwF5HkMxbJrdQ5NldY0gXB_83kXsvNQOjrNwSo5AuLKwoFn</stringProp>
+      </elementProp>
+  </collectionProp>
+</HeaderManager>
+<hashTree/>
+<HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="分页列表" enabled="true">
+  <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+    <collectionProp name="Arguments.arguments"/>
+  </elementProp>
+  <stringProp name="HTTPSampler.domain">127.0.0.1</stringProp>
+  <stringProp name="HTTPSampler.port">8080</stringProp>
+  <stringProp name="HTTPSampler.protocol">http</stringProp>
+  <stringProp name="HTTPSampler.path">/api/items?type=FOUND&amp;page=1&amp;size=10</stringProp>
+  <stringProp name="HTTPSampler.method">GET</stringProp>
+  <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+  <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+</HTTPSamplerProxy>
+<hashTree/>
+
+</hashTree>
+
+<ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="匹配候选 GET /api/matches" enabled="true">
+  <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+  <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="循环控制器" enabled="true">
+    <boolProp name="LoopController.continue_forever">false</boolProp>
+    <stringProp name="LoopController.loops">20</stringProp>
+  </elementProp>
+  <stringProp name="ThreadGroup.num_threads">50</stringProp>
+  <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+  <boolProp name="ThreadGroup.scheduler">false</boolProp>
+  <stringProp name="ThreadGroup.duration"></stringProp>
+  <stringProp name="ThreadGroup.delay"></stringProp>
+  <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+</ThreadGroup>
+<hashTree>
+<HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+  <collectionProp name="HeaderManager.headers">
+      <elementProp name="Authorization" elementType="Header">
+        <stringProp name="Header.name">Authorization</stringProp>
+        <stringProp name="Header.value">Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MyIsInVzZXJuYW1lIjoiZGVtbzAxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3OTE5ODI1NjIsImV4cCI6MTc5MjA2ODk2Mn0.TDfPXH74HWnsOS7kymwF5HkMxbJrdQ5NldY0gXB_83kXsvNQOjrNwSo5AuLKwoFn</stringProp>
+      </elementProp>
+  </collectionProp>
+</HeaderManager>
+<hashTree/>
+<HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="匹配候选" enabled="true">
+  <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+    <collectionProp name="Arguments.arguments"/>
+  </elementProp>
+  <stringProp name="HTTPSampler.domain">127.0.0.1</stringProp>
+  <stringProp name="HTTPSampler.port">8080</stringProp>
+  <stringProp name="HTTPSampler.protocol">http</stringProp>
+  <stringProp name="HTTPSampler.path">/api/matches?itemId=431</stringProp>
+  <stringProp name="HTTPSampler.method">GET</stringProp>
+  <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+  <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+</HTTPSamplerProxy>
+<hashTree/>
+
+</hashTree>
+
+<ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="信息发布 POST /api/items" enabled="true">
+  <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+  <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="循环控制器" enabled="true">
+    <boolProp name="LoopController.continue_forever">false</boolProp>
+    <stringProp name="LoopController.loops">3</stringProp>
+  </elementProp>
+  <stringProp name="ThreadGroup.num_threads">10</stringProp>
+  <stringProp name="ThreadGroup.ramp_time">5</stringProp>
+  <boolProp name="ThreadGroup.scheduler">false</boolProp>
+  <stringProp name="ThreadGroup.duration"></stringProp>
+  <stringProp name="ThreadGroup.delay"></stringProp>
+  <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+</ThreadGroup>
+<hashTree>
+<HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+  <collectionProp name="HeaderManager.headers">
+      <elementProp name="Authorization" elementType="Header">
+        <stringProp name="Header.name">Authorization</stringProp>
+        <stringProp name="Header.value">Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MyIsInVzZXJuYW1lIjoiZGVtbzAxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3OTE5ODI1NjIsImV4cCI6MTc5MjA2ODk2Mn0.TDfPXH74HWnsOS7kymwF5HkMxbJrdQ5NldY0gXB_83kXsvNQOjrNwSo5AuLKwoFn</stringProp>
+      </elementProp>
+      <elementProp name="Content-Type" elementType="Header">
+        <stringProp name="Header.name">Content-Type</stringProp>
+        <stringProp name="Header.value">application/json</stringProp>
+      </elementProp>
+  </collectionProp>
+</HeaderManager>
+<hashTree/>
+<HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="信息发布" enabled="true">
+  <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+  <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+    <collectionProp name="Arguments.arguments">
+      <elementProp name="" elementType="HTTPArgument">
+        <boolProp name="HTTPArgument.always_encode">false</boolProp>
+        <stringProp name="Argument.value">{&quot;type&quot;:&quot;LOST&quot;,&quot;title&quot;:&quot;JMETER压测-黑色钱包-${__threadNum}-${__counter(TRUE,)}&quot;,&quot;categoryId&quot;:10,&quot;locationId&quot;:10,&quot;eventTime&quot;:&quot;2026-10-14 12:00:00&quot;,&quot;description&quot;:&quot;JMeter 压测自动发布的数据，测试后清理。黑色皮质短款钱包，内有校园卡。&quot;}</stringProp>
+        <stringProp name="Argument.metadata">=</stringProp>
+      </elementProp>
+    </collectionProp>
+  </elementProp>
+  <stringProp name="HTTPSampler.domain">127.0.0.1</stringProp>
+  <stringProp name="HTTPSampler.port">8080</stringProp>
+  <stringProp name="HTTPSampler.protocol">http</stringProp>
+  <stringProp name="HTTPSampler.path">/api/items</stringProp>
+  <stringProp name="HTTPSampler.method">POST</stringProp>
+  <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+  <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+</HTTPSamplerProxy>
+<hashTree/>
+
+</hashTree>
+
+</hashTree>
+</hashTree>
+</jmeterTestPlan>

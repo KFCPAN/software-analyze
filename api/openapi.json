@@ -1083,37 +1083,22 @@
       }
     },
     "/api/admin/users/{id}/ban": {
-      "post": {
+      "put": {
         "tags": [
           "后台"
         ],
-        "summary": "封禁/解封用户",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
+        "summary": "封禁用户（body 仅 reason）",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "ban": {
-                    "type": "boolean"
-                  },
                   "reason": {
                     "type": "string"
                   }
-                },
-                "required": [
-                  "ban"
-                ]
+                }
               }
             }
           }
@@ -1311,6 +1296,364 @@
                       }
                     ]
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard/stats": {
+      "get": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "数据看板统计（stats 四指标 + locations 地点分布）",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "stats": {
+                      "totalPosts": 230,
+                      "resolvedCount": 38,
+                      "matchRate": 42,
+                      "avgTime": 36.5
+                    },
+                    "locations": [
+                      {
+                        "name": "图书馆",
+                        "count": 21
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/audit/list": {
+      "get": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "内容审核列表（默认 OPEN，扁平字段 + 风险等级）",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "total": 1,
+                    "current": 1,
+                    "size": 10,
+                    "list": [
+                      {
+                        "id": 1,
+                        "type": "lost",
+                        "title": "黑色钱包",
+                        "publisher": "zhangsan",
+                        "riskLevel": "medium",
+                        "createTime": "2026-09-01 10:30:00",
+                        "description": "内有学生证",
+                        "riskReason": "包含「学生证」等易冒领/涉联系方式信息"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/audit/{id}/approve": {
+      "put": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "审核通过（恢复/保持 OPEN，通知发布者）",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/audit/{id}/reject": {
+      "put": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "审核驳回（下架 ARCHIVED，必填原因）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "用户列表（status: banned / normal）",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "total": 1,
+                    "current": 1,
+                    "size": 10,
+                    "list": [
+                      {
+                        "id": 2,
+                        "username": "zhangsan",
+                        "email": "z@edu.cn",
+                        "credit": 100,
+                        "status": "normal",
+                        "registerTime": "2026-08-15"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/unban": {
+      "put": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "解封用户",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/config/match": {
+      "get": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "获取匹配参数配置",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "w1": 0.6,
+                    "w2": 0.4,
+                    "w3": 0.0,
+                    "w4": 0.0,
+                    "threshold": 0.7
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "更新匹配参数配置（持久化 + 审计）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "w1",
+                  "w2",
+                  "w3",
+                  "w4",
+                  "threshold"
+                ],
+                "properties": {
+                  "w1": {
+                    "type": "number"
+                  },
+                  "w2": {
+                    "type": "number"
+                  },
+                  "w3": {
+                    "type": "number"
+                  },
+                  "w4": {
+                    "type": "number"
+                  },
+                  "threshold": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/config/category": {
+      "post": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "新增物品分类（body: name）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/config/location": {
+      "post": {
+        "tags": [
+          "后台"
+        ],
+        "summary": "新增地点词表（body: name, campus 可选）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "campus": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
