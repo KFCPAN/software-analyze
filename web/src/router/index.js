@@ -125,6 +125,19 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !token) {
     next('/login')
+  } else if (to.meta.requiresAdmin) {
+    // 管理后台仅管理员可见：从本地用户信息判断角色（兼容大小写）
+    let userInfo = null
+    try {
+      userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
+    } catch (e) {
+      userInfo = null
+    }
+    if (!token || String(userInfo?.role || '').toLowerCase() !== 'admin') {
+      next('/home')
+    } else {
+      next()
+    }
   } else {
     next()
   }

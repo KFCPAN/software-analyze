@@ -28,7 +28,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function isAdmin() {
-    return userInfo.value?.role === 'admin'
+    return String(userInfo.value?.role || '').toLowerCase() === 'admin'
   }
 
   return { token, userInfo, unreadCount, setToken, setUserInfo, setUnreadCount, logout, isAdmin }
