@@ -11,6 +11,7 @@
           <el-menu-item index="/post/lost">发布失物</el-menu-item>
           <el-menu-item index="/post/found">发布招领</el-menu-item>
           <el-menu-item index="/post/mine">我的发布</el-menu-item>
+          <el-menu-item index="/claim/progress">认领中心</el-menu-item>
         </el-menu>
       </div>
       <div class="nav-user">
