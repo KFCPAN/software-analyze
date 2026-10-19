@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>logout</title></head>
+<body>
+<script>
+  try {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
+  } catch (e) {}
+  location.replace('/login');
+</script>
+</body>
+</html>

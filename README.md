@@ -22,12 +22,12 @@
 ├── dataset/         # 匹配引擎模拟数据集
 │   ├── sim_dataset.xlsx
 │   └── photos/      #   照片，文件名 = 数据编号.jpg
-├── db/              # 建表 SQL（init.sql，10 张表）
+├── db/              # 建表 SQL（init.sql，10 张表）+ 演示账号种子（seed-demo-users.sql）
 ├── scripts/         # 数据导入、匹配实验评估脚本
-├── server/          # Java 后端（Spring Boot 3，31 个接口）
+├── server/          # Java 后端（Spring Boot 3，31 个接口；含 Dockerfile 可容器化运行）
 ├── matcher/         # Python 匹配引擎（FastAPI + BGE + CLIP）
 ├── web/             # Vue3 前端（Vite + Element Plus）
-└── deploy/          # docker-compose.yml（一键起 PostgreSQL+pgvector）
+└── deploy/          # docker-compose.yml（默认起 PostgreSQL；--profile app 一键全栈，新成员 see docs/启动指南.md 第⓪节）
 ```
 
 ## 当前进度（截至第 7 周）

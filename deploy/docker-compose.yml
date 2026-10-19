@@ -1,3 +1,13 @@
+# 校园失物招领平台 · 一键编排
+#
+# 默认（组长日常开发，行为与历史版本一致）：
+#   docker compose up -d            # 只起 PostgreSQL，后端用 IDEA 跑
+#
+# 组员/演示一键全栈（后端跑在容器里，无需 JDK/Maven/Python）：
+#   docker compose --profile app up -d --build
+#   然后 cd ../web && pnpm install && pnpm dev，浏览器开 http://localhost:5173
+#   首次启动会自动建表（db/init.sql）并写入演示账号（db/seed-demo-users.sql，demo01~demo10 / Demo123456）
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -11,11 +21,45 @@ services:
       - "5432:5432"
     volumes:
       - lnf-pgdata:/var/lib/postgresql/data
+      # 首次初始化（数据卷为空）时按文件名顺序自动执行；已有数据卷的机器不会重复执行
+      - ../db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ../db/seed-demo-users.sql:/docker-entrypoint-initdb.d/02-seed-demo-users.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lnf -d lost_and_found"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  backend:
+    profiles: ["app"]            # 默认不启动，组员加 --profile app 才起，不影响组长的 IDEA 工作流
+    build:
+      context: ../server
+      # 国内网络拉不动 Docker Hub 时，取消下面两行的注释（二选一；推荐后者一劳永逸）
+      # args:
+      #   MAVEN_IMAGE: docker.m.daocloud.io/library/maven:3.9-eclipse-temurin-17
+      #   JRE_IMAGE: docker.m.daocloud.io/library/eclipse-temurin:17-jre
+    container_name: lnf-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Spring Boot 环境变量绑定会覆盖 application.yml 的对应项
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/lost_and_found?stringtype=unspecified
+      SPRING_DATASOURCE_USERNAME: lnf
+      SPRING_DATASOURCE_PASSWORD: lnf2026
+      # 匹配引擎默认不在 compose 里（模型权重大），需要时在本机起 matcher，
+      # 容器通过 host.docker.internal 访问宿主机 9000 端口
+      MATCHER_BASE_URL: http://host.docker.internal:9000
+      APP_UPLOAD_DIR: /app/uploads
+      JWT_SECRET: bG5mLXNlcnZlci1kZXYtc2VjcmV0LWtleS0yMDI2LWNhbXB1cy1sb3N0LWFuZC1mb3VuZC1wbGF0Zm9ybQ==
+      APP_AES_KEY: LnfAesKey2026!!!
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    volumes:
+      - lnf-uploads:/app/uploads
+
 volumes:
   lnf-pgdata:
+  lnf-uploads:
