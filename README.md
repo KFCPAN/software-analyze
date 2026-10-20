@@ -24,19 +24,22 @@
 │   └── photos/      #   照片，文件名 = 数据编号.jpg
 ├── db/              # 建表 SQL（init.sql，10 张表）+ 演示账号种子（seed-demo-users.sql）
 ├── scripts/         # 数据导入、匹配实验评估脚本
-├── server/          # Java 后端（Spring Boot 3，31 个接口；含 Dockerfile 可容器化运行）
+├── server/          # Java 后端（Spring Boot 3，42 个接口；含 Dockerfile 可容器化运行）
 ├── matcher/         # Python 匹配引擎（FastAPI + BGE + CLIP）
 ├── web/             # Vue3 前端（Vite + Element Plus）
 └── deploy/          # docker-compose.yml（默认起 PostgreSQL；--profile app 一键全栈，新成员 see docs/启动指南.md 第⓪节）
 ```
 
-## 当前进度（截至第 7 周）
+## 当前进度（最终版，2026-10-20）
 
-- 后端 31 个接口全部实现并实测通过（含第 6 周新增：消息批量已读 / 类型筛选、信用流水、认领问题回显）
-- 匹配引擎双模型（BGE 文本 + CLIP 图像）跑通，阈值实验完成（推荐 0.70，详见 docs/research/匹配实验结果.md）
-- 前端 19 个页面完成并与真实接口联调
+- 后端 **42 个接口**全部实现并实测通过（2026-10-19 全量回归 42/42，明细见 [docs/接口实测记录-20261019.md](docs/接口实测记录-20261019.md)）
+- 匹配引擎双模型（BGE 文本 + CLIP 图像）跑通：语义硬门槛（text≥0.50，图像≥0.85 豁免）+ 综合分阈值 0.55，阈值实验与两轮线上调优见 docs/research/匹配实验结果.md
+- 前端 19 个页面完成并与真实接口联调（含管理后台：数据看板 / 内容审核 / 用户管理 / 系统设置）
+- 发布地点支持校区-二级地点级联（海淀 16 / 丰台 14 + 班车）及自定义地点输入
 - 数据库已导入 205 条演示数据（102 失物 + 103 招领，含 205 张实物照片）
-- UML 图（用例图 / 类图 / 时序图 / ER 图）见 docs/uml/
+- Docker 一键全栈（`--profile app`），组员无需 JDK/Maven 即可独立跑系统，见 docs/组员快速上手.md
+- UML 图（用例图 / 类图 / 时序图 / ER 图）见 docs/uml/；课程报告终稿见 docs/report/
+- 演示账号：`admin` / `demo01`~`demo10`，密码统一 `Demo123456`
 
 ## 分支规范
 

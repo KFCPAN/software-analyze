@@ -219,7 +219,7 @@ INSERT INTO locations (parent_id, name, campus, level) VALUES
     (3,'丰台-海淀班车','跨校区',2),(3,'海淀-丰台班车','跨校区',2)
 ON CONFLICT DO NOTHING;
 
--- 管理员账号（密码哈希为占位，首次部署后务必通过接口重置密码）
+-- 管理员账号（密码 Demo123456，与演示账号一致；生产部署务必通过环境变量/改密接口更换）
 INSERT INTO users (username, password_hash, email, nickname, role) VALUES
-    ('admin', 'RESET_ME_ON_FIRST_LOGIN', 'admin@muc.edu.cn', '系统管理员', 'ADMIN')
+    ('admin', '$2a$10$sydvggcHHcNitJvh8osWje06g3Ig5Ulnq7BU0W7JSqPZ5TadAO/rS', 'admin@muc.edu.cn', '系统管理员', 'ADMIN')
 ON CONFLICT (username) DO NOTHING;
